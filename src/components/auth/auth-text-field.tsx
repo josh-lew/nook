@@ -15,6 +15,7 @@ export function AuthTextField({ label, error, style, ...props }: AuthTextFieldPr
     <View style={styles.wrapper}>
       <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
       <TextInput
+        accessibilityLabel={label}
         placeholderTextColor={theme.textSecondary}
         autoCapitalize="none"
         autoCorrect={false}
