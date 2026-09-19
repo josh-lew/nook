@@ -7,7 +7,7 @@ import {
 import { Alert } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import LoginScreen from "./login";
+import LoginScreen from "@/app/(auth)/login";
 
 const mockSignIn = jest.fn();
 
