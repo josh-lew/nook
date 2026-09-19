@@ -1,21 +1,23 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
+
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Spacing } from "@/constants/theme";
 
 export default function Index() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Home screen</Text>
-    </View>
+    <ThemedView style={styles.container}>
+      <ThemedText type="subtitle">Home</ThemedText>
+      <ThemedText themeColor="textSecondary">Home screen</ThemedText>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#25292e",
     alignItems: "center",
     justifyContent: "center",
-  },
-  text: {
-    color: "#fff",
+    gap: Spacing.two,
   },
 });
