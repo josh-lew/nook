@@ -1,4 +1,4 @@
-import type { ProjectsSupabaseClient } from "./types";
+import type { ProjectsQueryBuilder, ProjectsSupabaseClient } from "./types";
 
 type InsertResult = {
   data: { id: string } | null;
@@ -18,17 +18,37 @@ export function createInsertBuilder(result: InsertResult) {
   });
 }
 
+function createQueryBuilder(result: {
+  data: unknown;
+  error: { message: string } | null;
+}): ProjectsQueryBuilder {
+  const builder: ProjectsQueryBuilder = {
+    eq: () => builder,
+    is: () => builder,
+    order: () => builder,
+    then: (onFulfilled, onRejected) =>
+      Promise.resolve(result).then(onFulfilled, onRejected),
+  };
+  return builder;
+}
+
 export function createMockProjectsClient(options: {
   user?: { id: string } | null;
   userError?: { message: string } | null;
   insertResult?: InsertResult;
+  queryResult?: {
+    data: unknown;
+    error: { message: string } | null;
+  };
   onInsert?: (table: string, values: unknown) => void;
   onUpdate?: (values: unknown, column: string, value: string) => void;
+  onSelect?: (table: string, columns?: string) => void;
 }): ProjectsSupabaseClient {
   const insertResult = options.insertResult ?? {
     data: { id: "generated-id" },
     error: null,
   };
+  const queryResult = options.queryResult ?? { data: [], error: null };
 
   return {
     auth: {
@@ -54,6 +74,10 @@ export function createMockProjectsClient(options: {
           };
         },
       }),
+      select: (columns?: string) => {
+        options.onSelect?.(table, columns);
+        return createQueryBuilder(queryResult);
+      },
     }),
   } as ProjectsSupabaseClient;
 }

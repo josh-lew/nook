@@ -74,8 +74,21 @@ export type ProjectsSupabaseClient = {
         };
       };
     };
+    select: (columns?: string) => ProjectsQueryBuilder;
   };
 };
+
+export type ProjectsQueryBuilder = {
+  eq: (column: string, value: string) => ProjectsQueryBuilder;
+  is: (column: string, value: null) => ProjectsQueryBuilder;
+  order: (
+    column: string,
+    options?: { ascending?: boolean },
+  ) => ProjectsQueryBuilder;
+} & PromiseLike<{
+  data: unknown;
+  error: { message: string } | null;
+}>;
 export type UploadFile = {
   uri: string;
   name: string;

@@ -1,7 +1,8 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,11 +15,16 @@ import {
   AddProjectModal,
   ProjectCategory,
 } from "@/components/explore/add-project-modal";
+import { ProjectCard } from "@/components/explore/project-card";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import type { ProjectStatus } from "../../../lib/projects";
+import {
+  getProjectsByStatus,
+  type ProjectListItem,
+  type ProjectStatus,
+} from "../../../lib/projects";
 
 type StatusPageProps = {
   title: string;
@@ -33,6 +39,12 @@ const CATEGORY_TO_STATUS: Record<ProjectCategory, ProjectStatus> = {
   completed: "completed",
 };
 
+const EMPTY_COPY: Record<ProjectCategory, string> = {
+  planning: "No planning projects yet — tap + to add one",
+  inProgress: "No in-progress projects yet — tap + to add one",
+  completed: "No completed projects yet — tap + to add one",
+};
+
 export function StatusPage({
   title,
   subtitle,
@@ -43,12 +55,50 @@ export function StatusPage({
   const theme = useTheme();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
+  const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const status = CATEGORY_TO_STATUS[category];
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      async function load() {
+        setLoading(true);
+        setError(null);
+
+        const result = await getProjectsByStatus(status);
+        if (!active) {
+          return;
+        }
+
+        if (result.error) {
+          setProjects([]);
+          setError(result.error);
+          setLoading(false);
+          return;
+        }
+
+        setProjects(result.data ?? []);
+        setLoading(false);
+      }
+
+      void load();
+
+      return () => {
+        active = false;
+      };
+    }, [status, reloadKey]),
+  );
 
   const openAddProject = () => {
     setModalVisible(false);
     router.push({
       pathname: "/add-project",
-      params: { status: CATEGORY_TO_STATUS[category] },
+      params: { status },
     });
   };
 
@@ -89,6 +139,48 @@ export function StatusPage({
             {subtitle}
           </ThemedText>
         ) : null}
+
+        {loading ? (
+          <View style={styles.state}>
+            <ActivityIndicator color={theme.text} />
+          </View>
+        ) : null}
+
+        {!loading && error ? (
+          <View style={styles.state}>
+            <ThemedText themeColor="textSecondary" style={styles.stateText}>
+              {error}
+            </ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading projects"
+              onPress={() => setReloadKey((key) => key + 1)}
+              style={({ pressed }) => [
+                styles.retryButton,
+                { backgroundColor: theme.backgroundSelected },
+                pressed && styles.pressed,
+              ]}
+            >
+              <ThemedText type="smallBold">Retry</ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {!loading && !error && projects.length === 0 ? (
+          <View style={styles.state}>
+            <ThemedText themeColor="textSecondary" style={styles.stateText}>
+              {EMPTY_COPY[category]}
+            </ThemedText>
+          </View>
+        ) : null}
+
+        {!loading && !error && projects.length > 0 ? (
+          <View style={styles.list}>
+            {projects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </View>
+        ) : null}
       </ScrollView>
 
       <AddProjectModal
@@ -126,6 +218,26 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: "left",
+  },
+  list: {
+    width: "100%",
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  state: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.five,
+    gap: Spacing.three,
+  },
+  stateText: {
+    textAlign: "center",
+  },
+  retryButton: {
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
   },
   pressed: {
     opacity: 0.7,
