@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import {
@@ -17,12 +18,19 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import type { ProjectStatus } from "../../../lib/projects";
 
 type StatusPageProps = {
   title: string;
   subtitle: string;
   category: ProjectCategory;
   contentContainerStyle?: ViewStyle;
+};
+
+const CATEGORY_TO_STATUS: Record<ProjectCategory, ProjectStatus> = {
+  planning: "planning",
+  inProgress: "in_progress",
+  completed: "completed",
 };
 
 export function StatusPage({
@@ -33,7 +41,16 @@ export function StatusPage({
 }: StatusPageProps) {
   const { width } = useWindowDimensions();
   const theme = useTheme();
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
+
+  const openAddProject = () => {
+    setModalVisible(false);
+    router.push({
+      pathname: "/add-project",
+      params: { status: CATEGORY_TO_STATUS[category] },
+    });
+  };
 
   return (
     <ThemedView style={[styles.page, { width }]}>
@@ -78,6 +95,7 @@ export function StatusPage({
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         category={category}
+        onSelectNew={openAddProject}
       />
     </ThemedView>
   );

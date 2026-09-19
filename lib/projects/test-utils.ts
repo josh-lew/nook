@@ -23,6 +23,7 @@ export function createMockProjectsClient(options: {
   userError?: { message: string } | null;
   insertResult?: InsertResult;
   onInsert?: (table: string, values: unknown) => void;
+  onUpdate?: (values: unknown, column: string, value: string) => void;
 }): ProjectsSupabaseClient {
   const insertResult = options.insertResult ?? {
     data: { id: "generated-id" },
@@ -43,6 +44,16 @@ export function createMockProjectsClient(options: {
         options.onInsert?.(table, values);
         return createInsertBuilder(insertResult);
       },
+      update: (values: unknown) => ({
+        eq: (column: string, value: string) => {
+          options.onUpdate?.(values, column, value);
+          return {
+            select: () => ({
+              single: () => Promise.resolve(insertResult),
+            }),
+          };
+        },
+      }),
     }),
   } as ProjectsSupabaseClient;
 }

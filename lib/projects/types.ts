@@ -23,6 +23,21 @@ export type InsertProjectMaterialInput = {
   is_selected?: boolean;
 };
 
+export type UpdateProjectInput = {
+  pattern_file_url?: string | null;
+  title?: string;
+  hobby_type?: HobbyType;
+  status?: ProjectStatus;
+};
+
+export type PhotoType = "inspiration" | "material" | "progress" | "finished";
+
+export type InsertProjectPhotoInput = {
+  image_url: string;
+  stage?: NoteStage;
+  photo_type?: PhotoType;
+};
+
 /**
  * Injectable client. The real `supabase` instance is passed through `unknown`
  * at call sites; tests supply a hand-rolled mock with the same call shape.
@@ -46,9 +61,21 @@ export type ProjectsSupabaseClient = {
       data: unknown;
       error: { message: string } | null;
     }>;
+    update: (values: unknown) => {
+      eq: (
+        column: string,
+        value: string,
+      ) => {
+        select: (columns?: string) => {
+          single: () => Promise<{
+            data: { id: string } | null;
+            error: { message: string } | null;
+          }>;
+        };
+      };
+    };
   };
 };
-
 export type UploadFile = {
   uri: string;
   name: string;
