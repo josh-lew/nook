@@ -48,3 +48,38 @@ export type ProjectsSupabaseClient = {
     }>;
   };
 };
+
+export type UploadFile = {
+  uri: string;
+  name: string;
+  type: string;
+};
+
+/** Injectable client for storage uploads. */
+export type UploadsSupabaseClient = {
+  auth: {
+    getUser: () => Promise<{
+      data: { user: { id: string } | null };
+      error: { message: string } | null;
+    }>;
+  };
+  storage: {
+    from: (bucket: string) => {
+      upload: (
+        path: string,
+        body: Blob,
+        options?: { contentType?: string; upsert?: boolean },
+      ) => Promise<{
+        data: { path: string } | null;
+        error: { message: string } | null;
+      }>;
+      createSignedUrl: (
+        path: string,
+        expiresIn: number,
+      ) => Promise<{
+        data: { signedUrl: string } | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+};
