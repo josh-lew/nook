@@ -29,9 +29,9 @@ export function NotesStep({ note, onChangeNote }: NotesStepProps) {
         style={[
           styles.input,
           {
-            color: theme.text,
-            backgroundColor: theme.backgroundElement,
-            borderColor: theme.backgroundSelected,
+            color: theme.textPrimary,
+            backgroundColor: theme.surface,
+            borderColor: theme.border,
           },
         ]}
       />

@@ -97,7 +97,7 @@ export default function RegisterScreen() {
         ]}
         keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>Create account</Text>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>Create account</Text>
           <Text style={{ color: theme.textSecondary }}>Join Nook and pick your crafts</Text>
         </View>
 
@@ -141,7 +141,9 @@ export default function RegisterScreen() {
 
           <CraftChips selected={crafts} onChange={setCrafts} />
 
-          {error ? <Text style={styles.formError}>{error}</Text> : null}
+          {error ? (
+            <Text style={[styles.formError, { color: theme.error }]}>{error}</Text>
+          ) : null}
           {needsEmailConfirm ? (
             <Text style={{ color: theme.textSecondary }}>
               Check your email to confirm your account, then log in.
@@ -155,7 +157,7 @@ export default function RegisterScreen() {
           <Text style={{ color: theme.textSecondary }}>Already have an account?</Text>
           <Link href="/login" asChild>
             <Pressable accessibilityRole="button">
-              <Text style={[styles.swapLink, { color: theme.text }]}>Log in</Text>
+              <Text style={[styles.swapLink, { color: theme.textPrimary }]}>Log in</Text>
             </Pressable>
           </Link>
         </View>
@@ -185,7 +187,6 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   formError: {
-    color: '#c44',
     fontSize: 14,
   },
   swap: {

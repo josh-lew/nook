@@ -80,7 +80,7 @@ export function PatternStep({
           onPress={pickPattern}
           style={({ pressed }) => [
             styles.button,
-            { backgroundColor: theme.backgroundElement },
+            { backgroundColor: theme.surface },
             pressed && styles.pressed,
           ]}
         >
@@ -115,7 +115,7 @@ export function PatternStep({
           onPress={pickInspiration}
           style={({ pressed }) => [
             styles.button,
-            { backgroundColor: theme.backgroundElement },
+            { backgroundColor: theme.surface },
             pressed && styles.pressed,
           ]}
         >

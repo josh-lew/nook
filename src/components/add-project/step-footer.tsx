@@ -83,7 +83,7 @@ export function StepFooter({
                 onPress={onSave}
                 style={({ pressed }) => [
                   styles.primaryBtn,
-                  { backgroundColor: theme.text },
+                  { backgroundColor: theme.primary },
                   pressed && styles.pressed,
                   saving && styles.disabled,
                 ]}
@@ -102,7 +102,7 @@ export function StepFooter({
               onPress={onNext}
               style={({ pressed }) => [
                 styles.primaryBtn,
-                { backgroundColor: theme.text },
+                { backgroundColor: theme.primary },
                 pressed && styles.pressed,
               ]}
             >

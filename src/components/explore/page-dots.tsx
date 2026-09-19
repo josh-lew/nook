@@ -29,7 +29,7 @@ export function PageDots({ count, activeIndex }: PageDotsProps) {
                 width: size,
                 height: size,
                 borderRadius: size / 2,
-                backgroundColor: active ? theme.text : theme.textSecondary,
+                backgroundColor: active ? theme.primary : theme.textSecondary,
               },
             ]}
           />

@@ -27,13 +27,13 @@ export function ProjectCard({ project }: ProjectCardProps) {
     <View
       style={[
         styles.card,
-        { backgroundColor: theme.backgroundElement },
+        { backgroundColor: theme.surface },
       ]}
     >
       <View
         style={[
           styles.imageWrap,
-          { backgroundColor: theme.backgroundSelected },
+          { backgroundColor: theme.border },
         ]}
       >
         {project.photoUrl ? (
@@ -69,7 +69,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <View
             style={[
               styles.badge,
-              { backgroundColor: theme.backgroundSelected },
+              { backgroundColor: theme.border },
             ]}
           >
             <ThemedText type="small">Pattern</ThemedText>

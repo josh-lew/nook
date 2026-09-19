@@ -362,7 +362,10 @@ export default function AddProjectScreen() {
           ) : null}
 
           {submitError ? (
-            <ThemedText type="small" style={styles.submitError}>
+            <ThemedText
+              type="small"
+              style={[styles.submitError, { color: theme.error }]}
+            >
               {submitError}
             </ThemedText>
           ) : null}
@@ -383,7 +386,7 @@ export default function AddProjectScreen() {
         <View
           style={[styles.savingOverlay, { backgroundColor: theme.background }]}
         >
-          <ActivityIndicator size="large" color={theme.text} />
+          <ActivityIndicator size="large" color={theme.textPrimary} />
           <ThemedText themeColor="textSecondary">Saving project…</ThemedText>
         </View>
       ) : null}
@@ -407,7 +410,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   submitError: {
-    color: "#c44",
     marginTop: Spacing.three,
   },
   savingOverlay: {

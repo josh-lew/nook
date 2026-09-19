@@ -2,51 +2,75 @@ import {
   createContext,
   PropsWithChildren,
   use,
+  useMemo,
   useState,
-} from 'react';
-import { useColorScheme as useSystemColorScheme } from 'react-native';
+} from "react";
+import { useColorScheme as useSystemColorScheme } from "react-native";
 
-export type ColorScheme = 'light' | 'dark';
+export type ColorScheme = "light" | "dark";
+export type ThemePreference = "light" | "dark" | "system";
 
 type ThemePreferenceContextValue = {
+  /** Resolved scheme after applying preference + system. */
   colorScheme: ColorScheme;
+  /** User preference: light, dark, or follow system (default). */
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
+  /** Cycles light → dark → system for a future settings toggle. */
   toggleColorScheme: () => void;
 };
 
-const ThemePreferenceContext = createContext<ThemePreferenceContextValue | null>(
-  null,
-);
+const ThemePreferenceContext =
+  createContext<ThemePreferenceContextValue | null>(null);
 
 function resolveSystemScheme(
   system: ReturnType<typeof useSystemColorScheme>,
 ): ColorScheme {
-  return system === 'dark' ? 'dark' : 'light';
+  return system === "dark" ? "dark" : "light";
 }
 
 export function ThemePreferenceProvider({ children }: PropsWithChildren) {
   const systemScheme = useSystemColorScheme();
-  const [override, setOverride] = useState<ColorScheme | null>(null);
+  const [preference, setPreference] = useState<ThemePreference>("system");
 
-  const colorScheme = override ?? resolveSystemScheme(systemScheme);
+  const colorScheme: ColorScheme =
+    preference === "system"
+      ? resolveSystemScheme(systemScheme)
+      : preference;
 
-  const toggleColorScheme = () => {
-    setOverride((current) => {
-      const active = current ?? resolveSystemScheme(systemScheme);
-      return active === 'dark' ? 'light' : 'dark';
-    });
-  };
+  const value = useMemo(
+    () => ({
+      colorScheme,
+      preference,
+      setPreference,
+      toggleColorScheme: () => {
+        setPreference((current) => {
+          if (current === "system") {
+            return resolveSystemScheme(systemScheme) === "dark"
+              ? "light"
+              : "dark";
+          }
+          if (current === "light") {
+            return "dark";
+          }
+          return "system";
+        });
+      },
+    }),
+    [colorScheme, preference, systemScheme],
+  );
 
   return (
-    <ThemePreferenceContext value={{ colorScheme, toggleColorScheme }}>
-      {children}
-    </ThemePreferenceContext>
+    <ThemePreferenceContext value={value}>{children}</ThemePreferenceContext>
   );
 }
 
 export function useThemePreference() {
   const value = use(ThemePreferenceContext);
   if (!value) {
-    throw new Error('useThemePreference must be used within ThemePreferenceProvider');
+    throw new Error(
+      "useThemePreference must be used within ThemePreferenceProvider",
+    );
   }
   return value;
 }

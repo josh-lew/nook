@@ -55,9 +55,9 @@ export function KeyDetailsStep({
           style={[
             styles.input,
             {
-              color: theme.text,
-              backgroundColor: theme.backgroundElement,
-              borderColor: titleError ? "#c44" : theme.backgroundSelected,
+              color: theme.textPrimary,
+              backgroundColor: theme.surface,
+              borderColor: titleError ? theme.error : theme.border,
             },
           ]}
         />
@@ -85,9 +85,9 @@ export function KeyDetailsStep({
                   styles.chip,
                   {
                     backgroundColor: selected
-                      ? theme.backgroundSelected
-                      : theme.backgroundElement,
-                    borderColor: selected ? theme.text : theme.backgroundSelected,
+                      ? theme.border
+                      : theme.surface,
+                    borderColor: selected ? theme.primary : theme.border,
                   },
                 ]}
               >
@@ -97,7 +97,10 @@ export function KeyDetailsStep({
           })}
         </View>
         {hobbyError ? (
-          <ThemedText type="small" style={styles.error}>
+          <ThemedText
+            type="small"
+            style={{ color: theme.error }}
+          >
             {hobbyError}
           </ThemedText>
         ) : null}
@@ -120,9 +123,9 @@ export function KeyDetailsStep({
                   styles.chip,
                   {
                     backgroundColor: selected
-                      ? theme.backgroundSelected
-                      : theme.backgroundElement,
-                    borderColor: selected ? theme.text : theme.backgroundSelected,
+                      ? theme.border
+                      : theme.surface,
+                    borderColor: selected ? theme.primary : theme.border,
                   },
                 ]}
               >
@@ -160,8 +163,5 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.five,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-  },
-  error: {
-    color: "#c44",
   },
 });

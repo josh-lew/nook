@@ -28,7 +28,7 @@ export function StepHeader({ stepIndex }: StepHeaderProps) {
               style={[
                 styles.dot,
                 {
-                  backgroundColor: active ? theme.text : theme.textSecondary,
+                  backgroundColor: active ? theme.primary : theme.textSecondary,
                   width: active ? 10 : 7,
                   height: active ? 10 : 7,
                   borderRadius: active ? 5 : 3.5,

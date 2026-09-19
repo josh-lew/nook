@@ -42,12 +42,12 @@ export function CraftChips({ selected, onChange }: CraftChipsProps) {
                 styles.chip,
                 {
                   backgroundColor: isSelected
-                    ? theme.backgroundSelected
-                    : theme.backgroundElement,
-                  borderColor: isSelected ? theme.text : theme.backgroundSelected,
+                    ? theme.border
+                    : theme.surface,
+                  borderColor: isSelected ? theme.primary : theme.border,
                 },
               ]}>
-              <Text style={{ color: theme.text, fontWeight: isSelected ? '600' : '500' }}>
+              <Text style={{ color: theme.textPrimary, fontWeight: isSelected ? '600' : '500' }}>
                 {option.label}
               </Text>
             </Pressable>

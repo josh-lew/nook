@@ -68,13 +68,13 @@ export function AddProjectModal({
             {
               backgroundColor: theme.background,
               paddingBottom: Math.max(insets.bottom, Spacing.three),
-              borderTopColor: theme.backgroundSelected,
+              borderTopColor: theme.border,
             },
           ]}
         >
           <View style={styles.handleRow}>
             <View
-              style={[styles.handle, { backgroundColor: theme.backgroundSelected }]}
+              style={[styles.handle, { backgroundColor: theme.border }]}
             />
           </View>
 
@@ -103,7 +103,7 @@ export function AddProjectModal({
             onPress={onSelectNew}
             style={({ pressed }) => [
               styles.row,
-              { backgroundColor: theme.backgroundElement },
+              { backgroundColor: theme.surface },
               pressed && styles.pressed,
             ]}
           >
@@ -114,7 +114,7 @@ export function AddProjectModal({
                 web: "add_circle",
               }}
               size={22}
-              tintColor={theme.text}
+              tintColor={theme.textPrimary}
             />
             <ThemedText type="default">New</ThemedText>
           </Pressable>
@@ -140,7 +140,7 @@ export function AddProjectModal({
           ) : (
             <>
               <View
-                style={[styles.divider, { backgroundColor: theme.backgroundSelected }]}
+                style={[styles.divider, { backgroundColor: theme.border }]}
               />
               <ScrollView
                 style={styles.list}
@@ -163,7 +163,7 @@ export function AddProjectModal({
                       onPress={() => onSelectProject?.(project)}
                       style={({ pressed }) => [
                         styles.projectRow,
-                        { borderBottomColor: theme.backgroundSelected },
+                        { borderBottomColor: theme.border },
                         pressed && styles.pressed,
                       ]}
                     >

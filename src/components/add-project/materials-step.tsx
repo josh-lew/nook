@@ -82,7 +82,7 @@ export function MaterialsStep({ materials, onChange }: MaterialsStepProps) {
           key={material.id}
           style={[
             styles.card,
-            { backgroundColor: theme.backgroundElement },
+            { backgroundColor: theme.surface },
           ]}
         >
           <View style={styles.cardHeader}>
@@ -108,9 +108,9 @@ export function MaterialsStep({ materials, onChange }: MaterialsStepProps) {
             style={[
               styles.input,
               {
-                color: theme.text,
+                color: theme.textPrimary,
                 backgroundColor: theme.background,
-                borderColor: theme.backgroundSelected,
+                borderColor: theme.border,
               },
             ]}
           />
@@ -124,9 +124,9 @@ export function MaterialsStep({ materials, onChange }: MaterialsStepProps) {
             style={[
               styles.input,
               {
-                color: theme.text,
+                color: theme.textPrimary,
                 backgroundColor: theme.background,
-                borderColor: theme.backgroundSelected,
+                borderColor: theme.border,
               },
             ]}
           />
@@ -139,9 +139,9 @@ export function MaterialsStep({ materials, onChange }: MaterialsStepProps) {
             style={[
               styles.input,
               {
-                color: theme.text,
+                color: theme.textPrimary,
                 backgroundColor: theme.background,
-                borderColor: theme.backgroundSelected,
+                borderColor: theme.border,
               },
             ]}
           />
@@ -151,7 +151,7 @@ export function MaterialsStep({ materials, onChange }: MaterialsStepProps) {
             onPress={() => pickPhoto(index)}
             style={({ pressed }) => [
               styles.photoBtn,
-              { borderColor: theme.backgroundSelected },
+              { borderColor: theme.border },
               pressed && styles.pressed,
             ]}
           >
@@ -169,7 +169,7 @@ export function MaterialsStep({ materials, onChange }: MaterialsStepProps) {
         onPress={addMaterial}
         style={({ pressed }) => [
           styles.addBtn,
-          { backgroundColor: theme.backgroundSelected },
+          { backgroundColor: theme.border },
           pressed && styles.pressed,
         ]}
       >

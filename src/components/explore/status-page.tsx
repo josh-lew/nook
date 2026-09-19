@@ -130,7 +130,7 @@ export function StatusPage({
                 web: "add_circle",
               }}
               size={28}
-              tintColor={theme.text}
+              tintColor={theme.textPrimary}
             />
           </Pressable>
         </View>
@@ -142,7 +142,7 @@ export function StatusPage({
 
         {loading ? (
           <View style={styles.state}>
-            <ActivityIndicator color={theme.text} />
+            <ActivityIndicator color={theme.textPrimary} />
           </View>
         ) : null}
 
@@ -157,7 +157,7 @@ export function StatusPage({
               onPress={() => setReloadKey((key) => key + 1)}
               style={({ pressed }) => [
                 styles.retryButton,
-                { backgroundColor: theme.backgroundSelected },
+                { backgroundColor: theme.border },
                 pressed && styles.pressed,
               ]}
             >

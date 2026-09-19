@@ -22,15 +22,17 @@ export function AuthTextField({ label, error, style, ...props }: AuthTextFieldPr
         style={[
           styles.input,
           {
-            color: theme.text,
-            backgroundColor: theme.backgroundElement,
-            borderColor: error ? '#c44' : theme.backgroundSelected,
+            color: theme.textPrimary,
+            backgroundColor: theme.surface,
+            borderColor: error ? theme.error : theme.border,
           },
           style,
         ]}
         {...props}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
+      ) : null}
     </View>
   );
 }
@@ -51,7 +53,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   error: {
-    color: '#c44',
     fontSize: 13,
   },
 });

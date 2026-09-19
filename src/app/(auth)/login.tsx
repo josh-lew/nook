@@ -65,7 +65,7 @@ export default function LoginScreen() {
         ]}
         keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>Log in</Text>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>Log in</Text>
           <Text style={{ color: theme.textSecondary }}>Welcome back to Nook</Text>
         </View>
 
@@ -96,7 +96,9 @@ export default function LoginScreen() {
             <Text style={{ color: theme.textSecondary }}>Forgot password?</Text>
           </Pressable>
 
-          {error ? <Text style={styles.formError}>{error}</Text> : null}
+          {error ? (
+            <Text style={[styles.formError, { color: theme.error }]}>{error}</Text>
+          ) : null}
 
           <AuthButton label="Log in" onPress={onSubmit} loading={loading} />
         </View>
@@ -105,7 +107,7 @@ export default function LoginScreen() {
           <Text style={{ color: theme.textSecondary }}>Don&apos;t have an account?</Text>
           <Link href="/register" asChild>
             <Pressable accessibilityRole="button">
-              <Text style={[styles.swapLink, { color: theme.text }]}>Create an account</Text>
+              <Text style={[styles.swapLink, { color: theme.textPrimary }]}>Create an account</Text>
             </Pressable>
           </Link>
         </View>
@@ -138,7 +140,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   formError: {
-    color: '#c44',
     fontSize: 14,
   },
   swap: {
