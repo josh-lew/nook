@@ -53,6 +53,7 @@ export function MaterialsStep({ materials, onChange }: MaterialsStepProps) {
       mediaTypes: ["images"],
       allowsMultipleSelection: false,
       quality: 0.85,
+      base64: true,
     });
 
     if (result.canceled || !result.assets?.[0]) {
@@ -65,6 +66,7 @@ export function MaterialsStep({ materials, onChange }: MaterialsStepProps) {
         uri: asset.uri,
         name: asset.fileName ?? `material-${index + 1}.jpg`,
         type: asset.mimeType ?? "image/jpeg",
+        base64: asset.base64 ?? undefined,
       },
     });
   };

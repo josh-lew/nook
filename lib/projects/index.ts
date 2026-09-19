@@ -19,4 +19,4 @@ export { insertProjectMaterials } from "./insert-project-materials";
 export { insertProjectNote } from "./insert-project-note";
 export { insertProjectPhotos } from "./insert-project-photos";
 export { updateProject } from "./update-project";
-export { sanitizeFilename, uploadPatternFile, uploadProjectPhoto } from "./uploads";
+export { sanitizeFilename, resolveContentType, uploadPatternFile, uploadProjectPhoto } from "./uploads";

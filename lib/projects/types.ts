@@ -80,6 +80,8 @@ export type UploadFile = {
   uri: string;
   name: string;
   type: string;
+  /** Optional base64 payload from image picker — preferred on Android. */
+  base64?: string;
 };
 
 /** Injectable client for storage uploads. */
@@ -94,7 +96,7 @@ export type UploadsSupabaseClient = {
     from: (bucket: string) => {
       upload: (
         path: string,
-        body: Blob,
+        body: ArrayBuffer | Blob,
         options?: { contentType?: string; upsert?: boolean },
       ) => Promise<{
         data: { path: string } | null;

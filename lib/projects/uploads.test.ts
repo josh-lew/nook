@@ -1,5 +1,6 @@
 import type { UploadsSupabaseClient } from "./types";
 import {
+  resolveContentType,
   sanitizeFilename,
   uploadPatternFile,
   uploadProjectPhoto,
@@ -9,10 +10,21 @@ jest.mock("../supabase", () => ({
   supabase: {},
 }));
 
+jest.mock("expo-file-system/legacy", () => ({
+  cacheDirectory: "file:///cache/",
+  EncodingType: { Base64: "base64" },
+  copyAsync: jest.fn(async () => undefined),
+  readAsStringAsync: jest.fn(async () =>
+    // "hi" in base64
+    Buffer.from("hi").toString("base64"),
+  ),
+}));
+
 const sampleFile = {
   uri: "file:///tmp/pattern.pdf",
   name: "My Pattern.pdf",
   type: "application/pdf",
+  base64: Buffer.from("pdf-bytes").toString("base64"),
 };
 
 function createMockUploadsClient(options: {
@@ -21,7 +33,12 @@ function createMockUploadsClient(options: {
   uploadError?: { message: string } | null;
   signedUrlError?: { message: string } | null;
   signedUrl?: string | null;
-  onUpload?: (bucket: string, path: string, body: Blob, options?: unknown) => void;
+  onUpload?: (
+    bucket: string,
+    path: string,
+    body: ArrayBuffer | Blob,
+    options?: unknown,
+  ) => void;
 }): UploadsSupabaseClient {
   return {
     auth: {
@@ -68,25 +85,51 @@ describe("sanitizeFilename", () => {
   });
 });
 
-describe("uploadPatternFile", () => {
-  beforeEach(() => {
-    global.fetch = jest.fn(async () =>
-      Promise.resolve({
-        ok: true,
-        blob: async () => new Blob(["pdf-bytes"], { type: "application/pdf" }),
+describe("resolveContentType", () => {
+  it("keeps a reliable reported mime type", () => {
+    expect(
+      resolveContentType({
+        uri: "file:///a.pdf",
+        name: "a.pdf",
+        type: "application/pdf",
       }),
-    ) as unknown as typeof fetch;
+    ).toBe("application/pdf");
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
+  it("infers mime type from extension when Android reports text/plain", () => {
+    expect(
+      resolveContentType({
+        uri: "content://media/1",
+        name: "pattern.pdf",
+        type: "text/plain",
+      }),
+    ).toBe("application/pdf");
   });
 
+  it("infers jpeg from extension", () => {
+    expect(
+      resolveContentType({
+        uri: "content://media/2",
+        name: "photo.JPG",
+        type: "application/octet-stream",
+      }),
+    ).toBe("image/jpeg");
+  });
+});
+
+describe("uploadPatternFile", () => {
   it("uploads to pattern-files at user/project/filename and returns a signed URL", async () => {
-    let uploaded: { bucket: string; path: string } | undefined;
+    let uploaded:
+      | { bucket: string; path: string; contentType?: string }
+      | undefined;
     const client = createMockUploadsClient({
-      onUpload: (bucket, path) => {
-        uploaded = { bucket, path };
+      onUpload: (bucket, path, _body, options) => {
+        uploaded = {
+          bucket,
+          path,
+          contentType: (options as { contentType?: string } | undefined)
+            ?.contentType,
+        };
       },
     });
 
@@ -99,7 +142,31 @@ describe("uploadPatternFile", () => {
     expect(uploaded).toEqual({
       bucket: "pattern-files",
       path: "user-1/project-1/My Pattern.pdf",
+      contentType: "application/pdf",
     });
+  });
+
+  it("normalizes text/plain PDF uploads to application/pdf", async () => {
+    let contentType: string | undefined;
+    const client = createMockUploadsClient({
+      onUpload: (_bucket, _path, _body, options) => {
+        contentType = (options as { contentType?: string } | undefined)
+          ?.contentType;
+      },
+    });
+
+    await uploadPatternFile(
+      "project-1",
+      {
+        uri: "content://downloads/1",
+        name: "guide.pdf",
+        type: "text/plain",
+        base64: Buffer.from("pdf").toString("base64"),
+      },
+      client,
+    );
+
+    expect(contentType).toBe("application/pdf");
   });
 
   it("returns an error when the user is not signed in", async () => {
@@ -120,35 +187,9 @@ describe("uploadPatternFile", () => {
 
     expect(result).toEqual({ data: null, error: "bucket not found" });
   });
-
-  it("returns an error when fetch fails to read the file", async () => {
-    global.fetch = jest.fn(async () =>
-      Promise.resolve({ ok: false, status: 404 }),
-    ) as unknown as typeof fetch;
-
-    const client = createMockUploadsClient({});
-
-    const result = await uploadPatternFile("project-1", sampleFile, client);
-
-    expect(result.data).toBeNull();
-    expect(result.error).toMatch(/failed to read file/i);
-  });
 });
 
 describe("uploadProjectPhoto", () => {
-  beforeEach(() => {
-    global.fetch = jest.fn(async () =>
-      Promise.resolve({
-        ok: true,
-        blob: async () => new Blob(["img"], { type: "image/jpeg" }),
-      }),
-    ) as unknown as typeof fetch;
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it("uploads to project-photos and returns a signed URL", async () => {
     let uploaded: { bucket: string; path: string } | undefined;
     const client = createMockUploadsClient({
@@ -160,7 +201,12 @@ describe("uploadProjectPhoto", () => {
 
     const result = await uploadProjectPhoto(
       "project-2",
-      { uri: "file:///tmp/a.jpg", name: "a.jpg", type: "image/jpeg" },
+      {
+        uri: "content://media/image/1",
+        name: "a.jpg",
+        type: "image/jpeg",
+        base64: Buffer.from("img").toString("base64"),
+      },
       client,
     );
 

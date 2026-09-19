@@ -51,6 +51,7 @@ export function PatternStep({
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       quality: 0.85,
+      base64: true,
     });
 
     if (result.canceled || !result.assets?.length) {
@@ -61,6 +62,7 @@ export function PatternStep({
       uri: asset.uri,
       name: asset.fileName ?? `inspiration-${index + 1}.jpg`,
       type: asset.mimeType ?? "image/jpeg",
+      base64: asset.base64 ?? undefined,
     }));
 
     onChangeInspirationPhotos([...inspirationPhotos, ...next]);
