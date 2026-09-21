@@ -30,4 +30,4 @@ export {
   pickLatestPhotoUrl,
   pickMaterialName,
 } from "./get-projects-by-status";
-export { sanitizeFilename, resolveContentType, uploadPatternFile, uploadProjectPhoto } from "./uploads";
+export { sanitizeFilename, resolveContentType, stabilizeUploadFile, uploadPatternFile, uploadProjectPhoto } from "./uploads";

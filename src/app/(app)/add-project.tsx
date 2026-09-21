@@ -45,6 +45,17 @@ type FormState = {
   note: string;
 };
 
+type OptionalStep = "pattern" | "inspiration" | "materials" | "note";
+
+type CompletedExtras = Record<OptionalStep, boolean>;
+
+const EMPTY_COMPLETED: CompletedExtras = {
+  pattern: false,
+  inspiration: false,
+  materials: false,
+  note: false,
+};
+
 function parseStatus(value: string | string[] | undefined): ProjectStatus {
   const raw = Array.isArray(value) ? value[0] : value;
   if (raw === "in_progress" || raw === "completed" || raw === "planning") {
@@ -62,6 +73,18 @@ function isDirty(form: FormState, initialStatus: ProjectStatus): boolean {
     form.inspirationPhotos.length > 0 ||
     form.materials.length > 0 ||
     form.note.trim().length > 0
+  );
+}
+
+function hasPendingExtras(
+  form: FormState,
+  completed: CompletedExtras,
+): boolean {
+  return (
+    (Boolean(form.patternFile) && !completed.pattern) ||
+    (form.inspirationPhotos.length > 0 && !completed.inspiration) ||
+    (form.materials.length > 0 && !completed.materials) ||
+    (form.note.trim().length > 0 && !completed.note)
   );
 }
 
@@ -90,7 +113,13 @@ export default function AddProjectScreen() {
   const [hobbyError, setHobbyError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+
   const allowLeaveRef = useRef(false);
+  const projectIdRef = useRef<string | null>(null);
+  const completedRef = useRef<CompletedExtras>({ ...EMPTY_COMPLETED });
+  const formRef = useRef(form);
+  formRef.current = form;
 
   useEffect(() => {
     setForm((current) => ({ ...current, status: initialStatus }));
@@ -102,6 +131,23 @@ export default function AddProjectScreen() {
   }, [router]);
 
   const requestClose = useCallback(() => {
+    if (projectIdRef.current) {
+      if (!hasPendingExtras(formRef.current, completedRef.current)) {
+        leave();
+        return;
+      }
+
+      Alert.alert(
+        "Leave this project?",
+        "Your project is already saved. Anything that hasn’t finished uploading won’t be added.",
+        [
+          { text: "Keep editing", style: "cancel" },
+          { text: "Leave", style: "destructive", onPress: leave },
+        ],
+      );
+      return;
+    }
+
     if (!isDirty(form, initialStatus)) {
       leave();
       return;
@@ -118,27 +164,62 @@ export default function AddProjectScreen() {
   }, [form, initialStatus, leave]);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("beforeRemove", (event: {
-      preventDefault: () => void;
-      data: { action: unknown };
-    }) => {
-      if (allowLeaveRef.current || saving || !isDirty(form, initialStatus)) {
-        return;
-      }
+    const unsubscribe = navigation.addListener(
+      "beforeRemove",
+      (event: {
+        preventDefault: () => void;
+        data: { action: unknown };
+      }) => {
+        if (allowLeaveRef.current || saving) {
+          return;
+        }
 
-      event.preventDefault();
-      Alert.alert("Discard this project?", "Your entered details will be lost.", [
-        { text: "Keep editing", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => {
-            allowLeaveRef.current = true;
-            navigation.dispatch(event.data.action as never);
-          },
-        },
-      ]);
-    });
+        if (projectIdRef.current) {
+          if (!hasPendingExtras(formRef.current, completedRef.current)) {
+            return;
+          }
+
+          event.preventDefault();
+          Alert.alert(
+            "Leave this project?",
+            "Your project is already saved. Anything that hasn’t finished uploading won’t be added.",
+            [
+              { text: "Keep editing", style: "cancel" },
+              {
+                text: "Leave",
+                style: "destructive",
+                onPress: () => {
+                  allowLeaveRef.current = true;
+                  navigation.dispatch(event.data.action as never);
+                },
+              },
+            ],
+          );
+          return;
+        }
+
+        if (!isDirty(form, initialStatus)) {
+          return;
+        }
+
+        event.preventDefault();
+        Alert.alert(
+          "Discard this project?",
+          "Your entered details will be lost.",
+          [
+            { text: "Keep editing", style: "cancel" },
+            {
+              text: "Discard",
+              style: "destructive",
+              onPress: () => {
+                allowLeaveRef.current = true;
+                navigation.dispatch(event.data.action as never);
+              },
+            },
+          ],
+        );
+      },
+    );
 
     return unsubscribe;
   }, [form, initialStatus, navigation, saving]);
@@ -173,48 +254,95 @@ export default function AddProjectScreen() {
     setStepIndex((current) => Math.max(current - 1, 0));
   };
 
-  const goSkip = () => {
-    if (stepIndex === 3) {
-      void handleSave();
-      return;
-    }
-    setStepIndex((current) => Math.min(current + 1, 3));
+  const showPartialFailure = (step: OptionalStep, message: string) => {
+    Alert.alert(
+      "Project saved",
+      `${message}\n\nYour project was created. Retry this step, continue without it, or keep editing.`,
+      [
+        { text: "Keep editing", style: "cancel" },
+        {
+          text: "Continue without it",
+          onPress: () => {
+            void handleSave({ skip: step });
+          },
+        },
+        {
+          text: "Retry",
+          onPress: () => {
+            void handleSave();
+          },
+        },
+      ],
+    );
   };
 
-  const handleSave = async () => {
-    if (!validateStepOne() || !form.hobbyType) {
+  const handleSave = async (options?: { skip?: OptionalStep }) => {
+    const currentForm = formRef.current;
+
+    if (!currentForm.hobbyType) {
+      if (!validateStepOne()) {
+        setStepIndex(0);
+      }
+      return;
+    }
+
+    if (!currentForm.title.trim()) {
+      validateStepOne();
       setStepIndex(0);
+      return;
+    }
+
+    if (options?.skip) {
+      completedRef.current[options.skip] = true;
+
+      if (options.skip === "pattern") {
+        setForm((current) => ({ ...current, patternFile: null }));
+        formRef.current = { ...formRef.current, patternFile: null };
+      } else if (options.skip === "inspiration") {
+        setForm((current) => ({ ...current, inspirationPhotos: [] }));
+        formRef.current = { ...formRef.current, inspirationPhotos: [] };
+      } else if (options.skip === "materials") {
+        setForm((current) => ({ ...current, materials: [] }));
+        formRef.current = { ...formRef.current, materials: [] };
+      } else if (options.skip === "note") {
+        setForm((current) => ({ ...current, note: "" }));
+        formRef.current = { ...formRef.current, note: "" };
+      }
+    }
+
+    const formSnapshot = formRef.current;
+    if (!formSnapshot.hobbyType) {
       return;
     }
 
     setSaving(true);
     setSubmitError(null);
 
-    const projectResult = await insertProject({
-      title: form.title.trim(),
-      hobby_type: form.hobbyType,
-      status: form.status,
-    });
+    let activeProjectId = projectIdRef.current;
 
-    if (projectResult.error || !projectResult.data) {
-      setSubmitError(projectResult.error ?? "Could not create project.");
-      setSaving(false);
-      return;
-    }
+    if (!activeProjectId) {
+      const projectResult = await insertProject({
+        title: formSnapshot.title.trim(),
+        hobby_type: formSnapshot.hobbyType,
+        status: formSnapshot.status,
+      });
 
-    const projectId = projectResult.data.id;
-
-    if (form.patternFile) {
-      const uploadResult = await uploadPatternFile(projectId, form.patternFile);
-      if (uploadResult.error || !uploadResult.data) {
-        setSubmitError(uploadResult.error ?? "Could not upload pattern file.");
+      if (projectResult.error || !projectResult.data) {
+        setSubmitError(projectResult.error ?? "Could not create project.");
         setSaving(false);
         return;
       }
 
-      const updateResult = await updateProject(projectId, {
-        pattern_file_url: uploadResult.data.url,
+      activeProjectId = projectResult.data.id;
+      projectIdRef.current = activeProjectId;
+      setProjectId(activeProjectId);
+    } else {
+      const updateResult = await updateProject(activeProjectId, {
+        title: formSnapshot.title.trim(),
+        hobby_type: formSnapshot.hobbyType,
+        status: formSnapshot.status,
       });
+
       if (updateResult.error) {
         setSubmitError(updateResult.error);
         setSaving(false);
@@ -222,42 +350,78 @@ export default function AddProjectScreen() {
       }
     }
 
-    if (form.inspirationPhotos.length > 0) {
+    if (formSnapshot.patternFile && !completedRef.current.pattern) {
+      const uploadResult = await uploadPatternFile(
+        activeProjectId,
+        formSnapshot.patternFile,
+      );
+      if (uploadResult.error || !uploadResult.data) {
+        setSaving(false);
+        showPartialFailure(
+          "pattern",
+          uploadResult.error ?? "Could not upload pattern file.",
+        );
+        return;
+      }
+
+      const updateResult = await updateProject(activeProjectId, {
+        pattern_file_url: uploadResult.data.url,
+      });
+      if (updateResult.error) {
+        setSaving(false);
+        showPartialFailure("pattern", updateResult.error);
+        return;
+      }
+
+      completedRef.current.pattern = true;
+    }
+
+    if (
+      formSnapshot.inspirationPhotos.length > 0 &&
+      !completedRef.current.inspiration
+    ) {
       const photoUrls: { image_url: string }[] = [];
-      for (const photo of form.inspirationPhotos) {
-        const uploadResult = await uploadProjectPhoto(projectId, photo);
+      for (const photo of formSnapshot.inspirationPhotos) {
+        const uploadResult = await uploadProjectPhoto(activeProjectId, photo);
         if (uploadResult.error || !uploadResult.data) {
-          setSubmitError(
+          setSaving(false);
+          showPartialFailure(
+            "inspiration",
             uploadResult.error ?? "Could not upload inspiration photo.",
           );
-          setSaving(false);
           return;
         }
         photoUrls.push({ image_url: uploadResult.data.url });
       }
 
-      const photosResult = await insertProjectPhotos(projectId, photoUrls);
+      const photosResult = await insertProjectPhotos(
+        activeProjectId,
+        photoUrls,
+      );
       if (photosResult.error) {
-        setSubmitError(photosResult.error);
         setSaving(false);
+        showPartialFailure("inspiration", photosResult.error);
         return;
       }
+
+      completedRef.current.inspiration = true;
     }
 
-    if (form.materials.length > 0) {
+    if (formSnapshot.materials.length > 0 && !completedRef.current.materials) {
       const materialRows = [];
-      for (const material of form.materials) {
+      for (const material of formSnapshot.materials) {
         let photoUrl: string | null = null;
         if (material.photo) {
           const uploadResult = await uploadProjectPhoto(
-            projectId,
+            activeProjectId,
             material.photo,
           );
           if (uploadResult.error || !uploadResult.data) {
-            setSubmitError(
+            setSaving(false);
+            showPartialFailure(
+              "materials",
               uploadResult.error ?? "Could not upload material photo.",
             );
-            setSaving(false);
             return;
           }
           photoUrl = uploadResult.data.url;
@@ -272,27 +436,42 @@ export default function AddProjectScreen() {
       }
 
       const materialsResult = await insertProjectMaterials(
-        projectId,
+        activeProjectId,
         materialRows,
       );
       if (materialsResult.error) {
-        setSubmitError(materialsResult.error);
         setSaving(false);
+        showPartialFailure("materials", materialsResult.error);
         return;
       }
+
+      completedRef.current.materials = true;
     }
 
-    if (form.note.trim()) {
-      const noteResult = await insertProjectNote(projectId, form.note);
+    if (formSnapshot.note.trim() && !completedRef.current.note) {
+      const noteResult = await insertProjectNote(
+        activeProjectId,
+        formSnapshot.note,
+      );
       if (noteResult.error) {
-        setSubmitError(noteResult.error);
         setSaving(false);
+        showPartialFailure("note", noteResult.error);
         return;
       }
+
+      completedRef.current.note = true;
     }
 
     setSaving(false);
     leave();
+  };
+
+  const goSkip = () => {
+    if (stepIndex === 3) {
+      void handleSave();
+      return;
+    }
+    setStepIndex((current) => Math.min(current + 1, 3));
   };
 
   return (
@@ -320,7 +499,9 @@ export default function AddProjectScreen() {
               status={form.status}
               titleError={titleError}
               hobbyError={hobbyError}
-              onChangeTitle={(title) => setForm((current) => ({ ...current, title }))}
+              onChangeTitle={(title) =>
+                setForm((current) => ({ ...current, title }))
+              }
               onChangeHobby={(hobbyType) =>
                 setForm((current) => ({ ...current, hobbyType }))
               }
@@ -361,6 +542,19 @@ export default function AddProjectScreen() {
             />
           ) : null}
 
+          {projectId &&
+          hasPendingExtras(form, completedRef.current) &&
+          !saving ? (
+            <ThemedText
+              type="small"
+              themeColor="textSecondary"
+              style={styles.savedHint}
+            >
+              Project created. Retry failed uploads, continue without them, or
+              leave anytime — Save won’t create a duplicate.
+            </ThemedText>
+          ) : null}
+
           {submitError ? (
             <ThemedText
               type="small"
@@ -378,7 +572,9 @@ export default function AddProjectScreen() {
           onBack={goBack}
           onNext={goNext}
           onSkip={goSkip}
-          onSave={handleSave}
+          onSave={() => {
+            void handleSave();
+          }}
         />
       </View>
 
@@ -387,7 +583,9 @@ export default function AddProjectScreen() {
           style={[styles.savingOverlay, { backgroundColor: theme.background }]}
         >
           <ActivityIndicator size="large" color={theme.textPrimary} />
-          <ThemedText themeColor="textSecondary">Saving project…</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            {projectId ? "Finishing project…" : "Saving project…"}
+          </ThemedText>
         </View>
       ) : null}
     </ThemedView>
@@ -408,6 +606,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: Spacing.four,
     flexGrow: 1,
+  },
+  savedHint: {
+    marginTop: Spacing.three,
   },
   submitError: {
     marginTop: Spacing.three,

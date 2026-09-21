@@ -15,12 +15,12 @@ export type ThemeColors = {
 };
 
 export const lightColors: ThemeColors = {
-  background: "#FDF6F3",
-  surface: "#FBEEEA",
-  primary: "#D98C8C",
+  background: "#fbf2ef",
+  surface: "#f7e4de",
+  primary: "#9eb36b",
   secondary: "#B8A9D9",
   textPrimary: "#4A3B3B",
-  textSecondary: "#9C8888",
+  textSecondary: "#6C574B",
   border: "#F0DDD6",
   error: "#B5544A",
 };

@@ -14,18 +14,18 @@ import { useTheme } from "@/hooks/use-theme";
 
 export type ProjectCategory = "planning" | "inProgress" | "completed";
 
-export type ProjectListItem = {
+export type MovableProject = {
   id: string;
-  name: string;
+  title: string;
 };
 
 type AddProjectModalProps = {
   visible: boolean;
   onClose: () => void;
   category: ProjectCategory;
-  projects?: ProjectListItem[];
+  projects?: MovableProject[];
   onSelectNew?: () => void;
-  onSelectProject?: (project: ProjectListItem) => void;
+  onSelectProject?: (project: MovableProject) => void;
 };
 
 const PREVIOUS_EMPTY_COPY: Record<
@@ -159,7 +159,7 @@ export function AddProjectModal({
                     <Pressable
                       key={project.id}
                       accessibilityRole="button"
-                      accessibilityLabel={project.name}
+                      accessibilityLabel={project.title}
                       onPress={() => onSelectProject?.(project)}
                       style={({ pressed }) => [
                         styles.projectRow,
@@ -167,7 +167,7 @@ export function AddProjectModal({
                         pressed && styles.pressed,
                       ]}
                     >
-                      <ThemedText type="default">{project.name}</ThemedText>
+                      <ThemedText type="default">{project.title}</ThemedText>
                     </Pressable>
                   ))
                 )}

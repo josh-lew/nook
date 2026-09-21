@@ -2,6 +2,7 @@ import type { UploadsSupabaseClient } from "./types";
 import {
   resolveContentType,
   sanitizeFilename,
+  stabilizeUploadFile,
   uploadPatternFile,
   uploadProjectPhoto,
 } from "./uploads";
@@ -10,14 +11,15 @@ jest.mock("../supabase", () => ({
   supabase: {},
 }));
 
-jest.mock("expo-file-system/legacy", () => ({
-  cacheDirectory: "file:///cache/",
-  EncodingType: { Base64: "base64" },
-  copyAsync: jest.fn(async () => undefined),
-  readAsStringAsync: jest.fn(async () =>
-    // "hi" in base64
-    Buffer.from("hi").toString("base64"),
-  ),
+const mockBase64 = jest.fn(async () => Buffer.from("hi").toString("base64"));
+const mockBytes = jest.fn(async () => Uint8Array.from([1, 2, 3]));
+
+jest.mock("expo-file-system", () => ({
+  File: jest.fn().mockImplementation((uri: string) => ({
+    uri,
+    base64: mockBase64,
+    bytes: mockBytes,
+  })),
 }));
 
 const sampleFile = {
@@ -114,6 +116,40 @@ describe("resolveContentType", () => {
         type: "application/octet-stream",
       }),
     ).toBe("image/jpeg");
+  });
+});
+
+describe("stabilizeUploadFile", () => {
+  beforeEach(() => {
+    mockBase64.mockClear();
+    mockBytes.mockClear();
+  });
+
+  it("reads picker URIs via File.base64 and attaches the payload", async () => {
+    const result = await stabilizeUploadFile({
+      uri: "content://downloads/pattern.pdf",
+      name: "pattern.pdf",
+      type: "application/pdf",
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data?.base64).toBe(Buffer.from("hi").toString("base64"));
+    expect(result.data?.uri).toBe("content://downloads/pattern.pdf");
+    expect(mockBase64).toHaveBeenCalled();
+  });
+
+  it("skips File reads when base64 is already present", async () => {
+    const file = {
+      uri: "content://downloads/pattern.pdf",
+      name: "pattern.pdf",
+      type: "application/pdf",
+      base64: Buffer.from("pdf").toString("base64"),
+    };
+
+    const result = await stabilizeUploadFile(file);
+
+    expect(result).toEqual({ data: file, error: null });
+    expect(mockBase64).not.toHaveBeenCalled();
   });
 });
 

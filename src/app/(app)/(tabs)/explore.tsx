@@ -40,6 +40,7 @@ export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [listVersion, setListVersion] = useState(0);
 
   const syncActiveIndex = (offsetX: number) => {
     const nextIndex = Math.round(offsetX / width);
@@ -70,6 +71,8 @@ export default function ExploreScreen() {
             title={page.title}
             subtitle={page.subtitle}
             category={page.category}
+            listVersion={listVersion}
+            onProjectsChanged={() => setListVersion((version) => version + 1)}
           />
         ))}
       </ScrollView>

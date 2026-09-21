@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -13,7 +13,8 @@ import {
 
 import {
   AddProjectModal,
-  ProjectCategory,
+  type MovableProject,
+  type ProjectCategory,
 } from "@/components/explore/add-project-modal";
 import { ProjectCard } from "@/components/explore/project-card";
 import { ThemedText } from "@/components/themed-text";
@@ -22,6 +23,7 @@ import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {
   getProjectsByStatus,
+  updateProject,
   type ProjectListItem,
   type ProjectStatus,
 } from "../../../lib/projects";
@@ -31,12 +33,21 @@ type StatusPageProps = {
   subtitle: string;
   category: ProjectCategory;
   contentContainerStyle?: ViewStyle;
+  /** Bumped by Explore when any page mutates projects so all mounted pages refetch. */
+  listVersion?: number;
+  onProjectsChanged?: () => void;
 };
 
 const CATEGORY_TO_STATUS: Record<ProjectCategory, ProjectStatus> = {
   planning: "planning",
   inProgress: "in_progress",
   completed: "completed",
+};
+
+/** Status to pull candidates from when promoting into this category. */
+const PREVIOUS_STATUS: Partial<Record<ProjectCategory, ProjectStatus>> = {
+  inProgress: "planning",
+  completed: "in_progress",
 };
 
 const EMPTY_COPY: Record<ProjectCategory, string> = {
@@ -50,49 +61,85 @@ export function StatusPage({
   subtitle,
   category,
   contentContainerStyle,
+  listVersion = 0,
+  onProjectsChanged,
 }: StatusPageProps) {
   const { width } = useWindowDimensions();
   const theme = useTheme();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [movableProjects, setMovableProjects] = useState<MovableProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
+  const [moving, setMoving] = useState(false);
 
   const status = CATEGORY_TO_STATUS[category];
+  const previousStatus = PREVIOUS_STATUS[category];
+
+  const loadProjects = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    const result = await getProjectsByStatus(status);
+
+    if (result.error) {
+      setProjects([]);
+      setError(result.error);
+      setLoading(false);
+      return;
+    }
+
+    setProjects(result.data ?? []);
+    setLoading(false);
+  }, [status]);
 
   useFocusEffect(
     useCallback(() => {
-      let active = true;
+      void loadProjects();
+    }, [loadProjects]),
+  );
 
-      async function load() {
-        setLoading(true);
-        setError(null);
+  useEffect(() => {
+    if (listVersion === 0) {
+      return;
+    }
+    void loadProjects();
+  }, [listVersion, loadProjects]);
 
-        const result = await getProjectsByStatus(status);
-        if (!active) {
-          return;
-        }
+  useEffect(() => {
+    if (!modalVisible || !previousStatus) {
+      setMovableProjects([]);
+      return;
+    }
 
-        if (result.error) {
-          setProjects([]);
-          setError(result.error);
-          setLoading(false);
-          return;
-        }
+    let active = true;
 
-        setProjects(result.data ?? []);
-        setLoading(false);
+    async function loadMovable() {
+      const result = await getProjectsByStatus(previousStatus!);
+      if (!active) {
+        return;
       }
 
-      void load();
+      if (result.error || !result.data) {
+        setMovableProjects([]);
+        return;
+      }
 
-      return () => {
-        active = false;
-      };
-    }, [status, reloadKey]),
-  );
+      setMovableProjects(
+        result.data.map((project) => ({
+          id: project.id,
+          title: project.title,
+        })),
+      );
+    }
+
+    void loadMovable();
+
+    return () => {
+      active = false;
+    };
+  }, [modalVisible, previousStatus]);
 
   const openAddProject = () => {
     setModalVisible(false);
@@ -100,6 +147,25 @@ export function StatusPage({
       pathname: "/add-project",
       params: { status },
     });
+  };
+
+  const moveProject = async (project: MovableProject) => {
+    if (moving) {
+      return;
+    }
+
+    setMoving(true);
+    const result = await updateProject(project.id, { status });
+    setMoving(false);
+
+    if (result.error) {
+      setError(result.error);
+      setModalVisible(false);
+      return;
+    }
+
+    setModalVisible(false);
+    onProjectsChanged?.();
   };
 
   return (
@@ -154,7 +220,9 @@ export function StatusPage({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Retry loading projects"
-              onPress={() => setReloadKey((key) => key + 1)}
+              onPress={() => {
+                void loadProjects();
+              }}
               style={({ pressed }) => [
                 styles.retryButton,
                 { backgroundColor: theme.border },
@@ -187,7 +255,11 @@ export function StatusPage({
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         category={category}
+        projects={movableProjects}
         onSelectNew={openAddProject}
+        onSelectProject={(project) => {
+          void moveProject(project);
+        }}
       />
     </ThemedView>
   );

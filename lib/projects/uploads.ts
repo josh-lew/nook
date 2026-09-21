@@ -1,10 +1,5 @@
 import { decode } from "base64-arraybuffer";
-import {
-  cacheDirectory,
-  copyAsync,
-  EncodingType,
-  readAsStringAsync,
-} from "expo-file-system/legacy";
+import { File } from "expo-file-system";
 
 import { supabase } from "../supabase";
 import type {
@@ -56,6 +51,36 @@ export function resolveContentType(file: UploadFile): string {
   return reported || "application/octet-stream";
 }
 
+/**
+ * Read a picker URI into base64 immediately via the Expo File API.
+ * Call at pick time so Android document URIs stay usable through Save.
+ */
+export async function stabilizeUploadFile(
+  file: UploadFile,
+): Promise<DataResult<UploadFile>> {
+  if (file.base64) {
+    return { data: file, error: null };
+  }
+
+  try {
+    const expoFile = new File(file.uri);
+    const base64 = await expoFile.base64();
+
+    return {
+      data: {
+        ...file,
+        uri: expoFile.uri || file.uri,
+        base64,
+      },
+      error: null,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to prepare file.";
+    return { data: null, error: message };
+  }
+}
+
 async function readFileAsArrayBuffer(
   file: UploadFile,
 ): Promise<DataResult<ArrayBuffer>> {
@@ -70,26 +95,13 @@ async function readFileAsArrayBuffer(
   }
 
   try {
-    let readableUri = file.uri;
-
-    // Android gallery/document URIs (content://) cannot be read directly.
-    if (
-      file.uri.startsWith("content://") ||
-      file.uri.startsWith("ph://") ||
-      file.uri.startsWith("assets-library://")
-    ) {
-      if (!cacheDirectory) {
-        return { data: null, error: "File cache is unavailable on this device." };
-      }
-      const destination = `${cacheDirectory}upload-${Date.now()}-${sanitizeFilename(file.name)}`;
-      await copyAsync({ from: file.uri, to: destination });
-      readableUri = destination;
-    }
-
-    const base64 = await readAsStringAsync(readableUri, {
-      encoding: EncodingType.Base64,
-    });
-    return { data: decode(base64), error: null };
+    const expoFile = new File(file.uri);
+    const bytes = await expoFile.bytes();
+    const buffer = bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength,
+    ) as ArrayBuffer;
+    return { data: buffer, error: null };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to read file.";

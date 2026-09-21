@@ -1,6 +1,7 @@
-import * as DocumentPicker from "expo-document-picker";
+import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
 import type { UploadFile } from "../../../lib/projects";
 import { ThemedText } from "@/components/themed-text";
@@ -21,24 +22,39 @@ export function PatternStep({
   onChangeInspirationPhotos,
 }: PatternStepProps) {
   const theme = useTheme();
+  const [preparing, setPreparing] = useState(false);
+  const [pickError, setPickError] = useState<string | null>(null);
 
   const pickPattern = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["application/pdf", "image/*"],
-      copyToCacheDirectory: true,
-      multiple: false,
-    });
+    setPickError(null);
 
-    if (result.canceled || !result.assets?.[0]) {
-      return;
+    try {
+      const pickResult = await File.pickFileAsync({
+        mimeTypes: ["application/pdf", "image/*"],
+      });
+
+      if (pickResult.canceled || !pickResult.result) {
+        return;
+      }
+
+      const picked = pickResult.result;
+      setPreparing(true);
+      const base64 = await picked.base64();
+      onChangePatternFile({
+        uri: picked.uri,
+        name: picked.name,
+        type: picked.type || "application/octet-stream",
+        base64,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not prepare that file. Try another copy.";
+      setPickError(message);
+    } finally {
+      setPreparing(false);
     }
-
-    const asset = result.assets[0];
-    onChangePatternFile({
-      uri: asset.uri,
-      name: asset.name,
-      type: asset.mimeType ?? "application/octet-stream",
-    });
   };
 
   const pickInspiration = async () => {
@@ -77,17 +93,30 @@ export function PatternStep({
         </ThemedText>
         <Pressable
           accessibilityRole="button"
-          onPress={pickPattern}
+          disabled={preparing}
+          onPress={() => {
+            void pickPattern();
+          }}
           style={({ pressed }) => [
             styles.button,
             { backgroundColor: theme.surface },
             pressed && styles.pressed,
+            preparing && styles.disabled,
           ]}
         >
-          <ThemedText type="small">
-            {patternFile ? "Replace pattern file" : "Choose pattern file"}
-          </ThemedText>
+          {preparing ? (
+            <ActivityIndicator color={theme.textPrimary} />
+          ) : (
+            <ThemedText type="small">
+              {patternFile ? "Replace pattern file" : "Choose pattern file"}
+            </ThemedText>
+          )}
         </Pressable>
+        {pickError ? (
+          <ThemedText type="small" style={{ color: theme.error }}>
+            {pickError}
+          </ThemedText>
+        ) : null}
         {patternFile ? (
           <View style={styles.fileRow}>
             <ThemedText type="small" style={styles.fileName}>
@@ -95,7 +124,10 @@ export function PatternStep({
             </ThemedText>
             <Pressable
               accessibilityRole="button"
-              onPress={() => onChangePatternFile(null)}
+              onPress={() => {
+                setPickError(null);
+                onChangePatternFile(null);
+              }}
             >
               <ThemedText type="small" themeColor="textSecondary">
                 Remove
@@ -112,7 +144,9 @@ export function PatternStep({
         </ThemedText>
         <Pressable
           accessibilityRole="button"
-          onPress={pickInspiration}
+          onPress={() => {
+            void pickInspiration();
+          }}
           style={({ pressed }) => [
             styles.button,
             { backgroundColor: theme.surface },
@@ -157,6 +191,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: Spacing.two,
+    minHeight: 36,
+    justifyContent: "center",
   },
   fileRow: {
     flexDirection: "row",
@@ -169,5 +205,8 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  disabled: {
+    opacity: 0.6,
   },
 });
