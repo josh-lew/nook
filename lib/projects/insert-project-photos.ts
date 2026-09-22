@@ -19,6 +19,9 @@ export async function insertProjectPhotos(
     image_url: photo.image_url,
     stage: photo.stage ?? "planning",
     photo_type: photo.photo_type ?? "inspiration",
+    ...(photo.is_primary !== undefined
+      ? { is_primary: photo.is_primary }
+      : {}),
   }));
 
   const { error } = await client.from("project_photos").insert(rows);

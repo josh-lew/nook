@@ -36,12 +36,37 @@ export type InsertProjectPhotoInput = {
   image_url: string;
   stage?: NoteStage;
   photo_type?: PhotoType;
+  is_primary?: boolean;
+};
+
+/** Singular insert: photo_type is required; no inference in the data layer. */
+export type InsertProjectPhotoArgs = {
+  image_url: string;
+  stage: NoteStage;
+  photo_type: "inspiration" | "progress" | "finished";
+  is_primary?: boolean;
 };
 
 /**
  * Injectable client. The real `supabase` instance is passed through `unknown`
  * at call sites; tests supply a hand-rolled mock with the same call shape.
  */
+export type ProjectsUpdateBuilder = {
+  eq: (
+    column: string,
+    value: string | boolean,
+  ) => ProjectsUpdateBuilder;
+  select: (columns?: string) => {
+    single: () => Promise<{
+      data: { id: string } | null;
+      error: { message: string } | null;
+    }>;
+  };
+} & PromiseLike<{
+  data: unknown;
+  error: { message: string } | null;
+}>;
+
 export type ProjectsSupabaseClient = {
   auth: {
     getUser: () => Promise<{
@@ -61,19 +86,7 @@ export type ProjectsSupabaseClient = {
       data: unknown;
       error: { message: string } | null;
     }>;
-    update: (values: unknown) => {
-      eq: (
-        column: string,
-        value: string,
-      ) => {
-        select: (columns?: string) => {
-          single: () => Promise<{
-            data: { id: string } | null;
-            error: { message: string } | null;
-          }>;
-        };
-      };
-    };
+    update: (values: unknown) => ProjectsUpdateBuilder;
     select: (columns?: string) => ProjectsQueryBuilder;
   };
 };

@@ -3,12 +3,14 @@ export type {
   HobbyType,
   InsertProjectInput,
   InsertProjectMaterialInput,
+  InsertProjectPhotoArgs,
   InsertProjectPhotoInput,
   NoteStage,
   PhotoType,
   ProjectStatus,
   ProjectsQueryBuilder,
   ProjectsSupabaseClient,
+  ProjectsUpdateBuilder,
   UpdateProjectInput,
   UploadFile,
   UploadsSupabaseClient,
@@ -22,7 +24,9 @@ export type {
 export { insertProject } from "./insert-project";
 export { insertProjectMaterials } from "./insert-project-materials";
 export { insertProjectNote } from "./insert-project-note";
+export { insertProjectPhoto } from "./insert-project-photo";
 export { insertProjectPhotos } from "./insert-project-photos";
+export { setPrimaryPhoto } from "./set-primary-photo";
 export { updateProject } from "./update-project";
 export {
   getProjectsByStatus,

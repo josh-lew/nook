@@ -1,7 +1,16 @@
-import type { ProjectsQueryBuilder, ProjectsSupabaseClient } from "./types";
+import type {
+  ProjectsQueryBuilder,
+  ProjectsSupabaseClient,
+  ProjectsUpdateBuilder,
+} from "./types";
 
 type InsertResult = {
   data: { id: string } | null;
+  error: { message: string } | null;
+};
+
+type UpdateResult = {
+  data: unknown;
   error: { message: string } | null;
 };
 
@@ -32,16 +41,51 @@ function createQueryBuilder(result: {
   return builder;
 }
 
+function createUpdateBuilder(
+  values: unknown,
+  result: UpdateResult,
+  insertResult: InsertResult,
+  onUpdate?: (
+    values: unknown,
+    column: string,
+    value: string | boolean,
+  ) => void,
+): ProjectsUpdateBuilder {
+  const builder: ProjectsUpdateBuilder = {
+    eq: (column: string, value: string | boolean) => {
+      onUpdate?.(values, column, value);
+      return builder;
+    },
+    select: () => ({
+      single: () =>
+        Promise.resolve({
+          data: insertResult.data,
+          error: result.error ?? insertResult.error,
+        }),
+    }),
+    then: (onFulfilled, onRejected) =>
+      Promise.resolve(result).then(onFulfilled, onRejected),
+  };
+  return builder;
+}
+
 export function createMockProjectsClient(options: {
   user?: { id: string } | null;
   userError?: { message: string } | null;
   insertResult?: InsertResult;
+  updateResult?: UpdateResult;
+  /** Return a different result for each successive update call. */
+  updateResults?: UpdateResult[];
   queryResult?: {
     data: unknown;
     error: { message: string } | null;
   };
   onInsert?: (table: string, values: unknown) => void;
-  onUpdate?: (values: unknown, column: string, value: string) => void;
+  onUpdate?: (
+    values: unknown,
+    column: string,
+    value: string | boolean,
+  ) => void;
   onSelect?: (table: string, columns?: string) => void;
 }): ProjectsSupabaseClient {
   const insertResult = options.insertResult ?? {
@@ -49,6 +93,7 @@ export function createMockProjectsClient(options: {
     error: null,
   };
   const queryResult = options.queryResult ?? { data: [], error: null };
+  let updateCallIndex = 0;
 
   return {
     auth: {
@@ -64,16 +109,17 @@ export function createMockProjectsClient(options: {
         options.onInsert?.(table, values);
         return createInsertBuilder(insertResult);
       },
-      update: (values: unknown) => ({
-        eq: (column: string, value: string) => {
-          options.onUpdate?.(values, column, value);
-          return {
-            select: () => ({
-              single: () => Promise.resolve(insertResult),
-            }),
-          };
-        },
-      }),
+      update: (values: unknown) => {
+        const result =
+          options.updateResults?.[updateCallIndex++] ??
+          options.updateResult ?? { data: null, error: null };
+        return createUpdateBuilder(
+          values,
+          result,
+          insertResult,
+          options.onUpdate,
+        );
+      },
       select: (columns?: string) => {
         options.onSelect?.(table, columns);
         return createQueryBuilder(queryResult);
