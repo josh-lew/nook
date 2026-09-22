@@ -20,6 +20,7 @@ type NestedPhoto = {
   id: string;
   image_url: string;
   created_at: string;
+  is_primary: boolean;
 };
 
 type NestedMaterial = {
@@ -55,6 +56,21 @@ export function pickLatestPhotoUrl(
   return sorted[0]?.image_url ?? null;
 }
 
+export function pickProjectPhotoUrl(
+  photos: NestedPhoto[] | null | undefined,
+): string | null {
+  if (!photos?.length) {
+    return null;
+  }
+
+  const primary = photos.find((photo) => photo.is_primary);
+  if (primary?.image_url) {
+    return primary.image_url;
+  }
+
+  return pickLatestPhotoUrl(photos);
+}
+
 export function pickMaterialName(
   materials: NestedMaterial[] | null | undefined,
 ): string | null {
@@ -83,7 +99,7 @@ export function mapProjectListRow(row: ProjectListRow): ProjectListItem {
     title: row.title,
     hobbyType: row.hobby_type,
     status: row.status,
-    photoUrl: pickLatestPhotoUrl(row.project_photos),
+    photoUrl: pickProjectPhotoUrl(row.project_photos),
     hasPattern: Boolean(row.pattern_file_url),
     materialName: pickMaterialName(row.project_materials),
   };
@@ -117,7 +133,7 @@ export async function getProjectsByStatus(
       pattern_file_url,
       created_at,
       plan_order,
-      project_photos ( id, image_url, created_at ),
+      project_photos ( id, image_url, created_at, is_primary ),
       project_materials ( id, name, is_selected, created_at )
     `,
     )

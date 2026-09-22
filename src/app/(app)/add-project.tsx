@@ -16,6 +16,11 @@ import {
 } from "@/components/add-project/materials-step";
 import { NotesStep } from "@/components/add-project/notes-step";
 import { PatternStep } from "@/components/add-project/pattern-step";
+import {
+  defaultPhotoTypeForStatus,
+  type AdditionalPhotoDraft,
+  type ProjectPhotoType,
+} from "@/components/add-project/photo-type";
 import { StepFooter } from "@/components/add-project/step-footer";
 import { StepHeader } from "@/components/add-project/step-header";
 import { ThemedText } from "@/components/themed-text";
@@ -27,7 +32,7 @@ import {
   insertProject,
   insertProjectMaterials,
   insertProjectNote,
-  insertProjectPhotos,
+  insertProjectPhoto,
   ProjectStatus,
   updateProject,
   UploadFile,
@@ -39,19 +44,27 @@ type FormState = {
   title: string;
   hobbyType: HobbyType | null;
   status: ProjectStatus;
+  primaryPhoto: UploadFile | null;
+  primaryPhotoType: ProjectPhotoType;
   patternFile: UploadFile | null;
-  inspirationPhotos: UploadFile[];
+  additionalPhotos: AdditionalPhotoDraft[];
   materials: MaterialDraft[];
   note: string;
 };
 
-type OptionalStep = "pattern" | "inspiration" | "materials" | "note";
+type OptionalStep =
+  | "primaryPhoto"
+  | "pattern"
+  | "additionalPhotos"
+  | "materials"
+  | "note";
 
 type CompletedExtras = Record<OptionalStep, boolean>;
 
 const EMPTY_COMPLETED: CompletedExtras = {
+  primaryPhoto: false,
   pattern: false,
-  inspiration: false,
+  additionalPhotos: false,
   materials: false,
   note: false,
 };
@@ -69,8 +82,9 @@ function isDirty(form: FormState, initialStatus: ProjectStatus): boolean {
     form.title.trim().length > 0 ||
     form.hobbyType !== null ||
     form.status !== initialStatus ||
+    form.primaryPhoto !== null ||
     form.patternFile !== null ||
-    form.inspirationPhotos.length > 0 ||
+    form.additionalPhotos.length > 0 ||
     form.materials.length > 0 ||
     form.note.trim().length > 0
   );
@@ -81,8 +95,9 @@ function hasPendingExtras(
   completed: CompletedExtras,
 ): boolean {
   return (
+    (Boolean(form.primaryPhoto) && !completed.primaryPhoto) ||
     (Boolean(form.patternFile) && !completed.pattern) ||
-    (form.inspirationPhotos.length > 0 && !completed.inspiration) ||
+    (form.additionalPhotos.length > 0 && !completed.additionalPhotos) ||
     (form.materials.length > 0 && !completed.materials) ||
     (form.note.trim().length > 0 && !completed.note)
   );
@@ -104,8 +119,10 @@ export default function AddProjectScreen() {
     title: "",
     hobbyType: null,
     status: initialStatus,
+    primaryPhoto: null,
+    primaryPhotoType: defaultPhotoTypeForStatus(initialStatus),
     patternFile: null,
-    inspirationPhotos: [],
+    additionalPhotos: [],
     materials: [],
     note: "",
   });
@@ -122,7 +139,15 @@ export default function AddProjectScreen() {
   formRef.current = form;
 
   useEffect(() => {
-    setForm((current) => ({ ...current, status: initialStatus }));
+    setForm((current) => ({
+      ...current,
+      status: initialStatus,
+      primaryPhotoType: defaultPhotoTypeForStatus(initialStatus),
+      additionalPhotos: current.additionalPhotos.map((photo) => ({
+        ...photo,
+        photoType: defaultPhotoTypeForStatus(initialStatus),
+      })),
+    }));
   }, [initialStatus]);
 
   const leave = useCallback(() => {
@@ -254,6 +279,19 @@ export default function AddProjectScreen() {
     setStepIndex((current) => Math.max(current - 1, 0));
   };
 
+  const applyStatusChange = (status: ProjectStatus) => {
+    const photoType = defaultPhotoTypeForStatus(status);
+    setForm((current) => ({
+      ...current,
+      status,
+      primaryPhotoType: photoType,
+      additionalPhotos: current.additionalPhotos.map((photo) => ({
+        ...photo,
+        photoType,
+      })),
+    }));
+  };
+
   const showPartialFailure = (step: OptionalStep, message: string) => {
     Alert.alert(
       "Project saved",
@@ -295,12 +333,15 @@ export default function AddProjectScreen() {
     if (options?.skip) {
       completedRef.current[options.skip] = true;
 
-      if (options.skip === "pattern") {
+      if (options.skip === "primaryPhoto") {
+        setForm((current) => ({ ...current, primaryPhoto: null }));
+        formRef.current = { ...formRef.current, primaryPhoto: null };
+      } else if (options.skip === "pattern") {
         setForm((current) => ({ ...current, patternFile: null }));
         formRef.current = { ...formRef.current, patternFile: null };
-      } else if (options.skip === "inspiration") {
-        setForm((current) => ({ ...current, inspirationPhotos: [] }));
-        formRef.current = { ...formRef.current, inspirationPhotos: [] };
+      } else if (options.skip === "additionalPhotos") {
+        setForm((current) => ({ ...current, additionalPhotos: [] }));
+        formRef.current = { ...formRef.current, additionalPhotos: [] };
       } else if (options.skip === "materials") {
         setForm((current) => ({ ...current, materials: [] }));
         formRef.current = { ...formRef.current, materials: [] };
@@ -350,6 +391,35 @@ export default function AddProjectScreen() {
       }
     }
 
+    if (formSnapshot.primaryPhoto && !completedRef.current.primaryPhoto) {
+      const uploadResult = await uploadProjectPhoto(
+        activeProjectId,
+        formSnapshot.primaryPhoto,
+      );
+      if (uploadResult.error || !uploadResult.data) {
+        setSaving(false);
+        showPartialFailure(
+          "primaryPhoto",
+          uploadResult.error ?? "Could not upload project photo.",
+        );
+        return;
+      }
+
+      const photoResult = await insertProjectPhoto(activeProjectId, {
+        image_url: uploadResult.data.url,
+        stage: formSnapshot.status,
+        photo_type: formSnapshot.primaryPhotoType,
+        is_primary: true,
+      });
+      if (photoResult.error) {
+        setSaving(false);
+        showPartialFailure("primaryPhoto", photoResult.error);
+        return;
+      }
+
+      completedRef.current.primaryPhoto = true;
+    }
+
     if (formSnapshot.patternFile && !completedRef.current.pattern) {
       const uploadResult = await uploadPatternFile(
         activeProjectId,
@@ -377,34 +447,37 @@ export default function AddProjectScreen() {
     }
 
     if (
-      formSnapshot.inspirationPhotos.length > 0 &&
-      !completedRef.current.inspiration
+      formSnapshot.additionalPhotos.length > 0 &&
+      !completedRef.current.additionalPhotos
     ) {
-      const photoUrls: { image_url: string }[] = [];
-      for (const photo of formSnapshot.inspirationPhotos) {
-        const uploadResult = await uploadProjectPhoto(activeProjectId, photo);
+      for (const photo of formSnapshot.additionalPhotos) {
+        const uploadResult = await uploadProjectPhoto(
+          activeProjectId,
+          photo.file,
+        );
         if (uploadResult.error || !uploadResult.data) {
           setSaving(false);
           showPartialFailure(
-            "inspiration",
-            uploadResult.error ?? "Could not upload inspiration photo.",
+            "additionalPhotos",
+            uploadResult.error ?? "Could not upload reference photo.",
           );
           return;
         }
-        photoUrls.push({ image_url: uploadResult.data.url });
+
+        const photoResult = await insertProjectPhoto(activeProjectId, {
+          image_url: uploadResult.data.url,
+          stage: formSnapshot.status,
+          photo_type: photo.photoType,
+          is_primary: false,
+        });
+        if (photoResult.error) {
+          setSaving(false);
+          showPartialFailure("additionalPhotos", photoResult.error);
+          return;
+        }
       }
 
-      const photosResult = await insertProjectPhotos(
-        activeProjectId,
-        photoUrls,
-      );
-      if (photosResult.error) {
-        setSaving(false);
-        showPartialFailure("inspiration", photosResult.error);
-        return;
-      }
-
-      completedRef.current.inspiration = true;
+      completedRef.current.additionalPhotos = true;
     }
 
     if (formSnapshot.materials.length > 0 && !completedRef.current.materials) {
@@ -452,6 +525,7 @@ export default function AddProjectScreen() {
       const noteResult = await insertProjectNote(
         activeProjectId,
         formSnapshot.note,
+        formSnapshot.status,
       );
       if (noteResult.error) {
         setSaving(false);
@@ -497,6 +571,8 @@ export default function AddProjectScreen() {
               title={form.title}
               hobbyType={form.hobbyType}
               status={form.status}
+              primaryPhoto={form.primaryPhoto}
+              primaryPhotoType={form.primaryPhotoType}
               titleError={titleError}
               hobbyError={hobbyError}
               onChangeTitle={(title) =>
@@ -505,21 +581,26 @@ export default function AddProjectScreen() {
               onChangeHobby={(hobbyType) =>
                 setForm((current) => ({ ...current, hobbyType }))
               }
-              onChangeStatus={(status) =>
-                setForm((current) => ({ ...current, status }))
+              onChangeStatus={applyStatusChange}
+              onChangePrimaryPhoto={(primaryPhoto) =>
+                setForm((current) => ({ ...current, primaryPhoto }))
+              }
+              onChangePrimaryPhotoType={(primaryPhotoType) =>
+                setForm((current) => ({ ...current, primaryPhotoType }))
               }
             />
           ) : null}
 
           {stepIndex === 1 ? (
             <PatternStep
+              status={form.status}
               patternFile={form.patternFile}
-              inspirationPhotos={form.inspirationPhotos}
+              additionalPhotos={form.additionalPhotos}
               onChangePatternFile={(patternFile) =>
                 setForm((current) => ({ ...current, patternFile }))
               }
-              onChangeInspirationPhotos={(inspirationPhotos) =>
-                setForm((current) => ({ ...current, inspirationPhotos }))
+              onChangeAdditionalPhotos={(additionalPhotos) =>
+                setForm((current) => ({ ...current, additionalPhotos }))
               }
             />
           ) : null}

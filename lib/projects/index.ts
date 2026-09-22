@@ -33,5 +33,6 @@ export {
   mapProjectListRow,
   pickLatestPhotoUrl,
   pickMaterialName,
+  pickProjectPhotoUrl,
 } from "./get-projects-by-status";
 export { sanitizeFilename, resolveContentType, stabilizeUploadFile, uploadPatternFile, uploadProjectPhoto } from "./uploads";

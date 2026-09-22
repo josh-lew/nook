@@ -14,13 +14,18 @@ describe("insertProjectNote", () => {
       },
     });
 
-    const result = await insertProjectNote("project-1", "   ", client);
+    const result = await insertProjectNote(
+      "project-1",
+      "   ",
+      "planning",
+      client,
+    );
 
     expect(result).toEqual({ data: { skipped: true }, error: null });
     expect(called).toBe(false);
   });
 
-  it("inserts a planning note and returns its id", async () => {
+  it("inserts a note with the given stage and returns its id", async () => {
     let inserted: unknown;
     const client = createMockProjectsClient({
       insertResult: { data: { id: "note-1" }, error: null },
@@ -32,13 +37,14 @@ describe("insertProjectNote", () => {
     const result = await insertProjectNote(
       "project-1",
       "  Cast on 40 stitches  ",
+      "in_progress",
       client,
     );
 
     expect(result).toEqual({ data: { id: "note-1" }, error: null });
     expect(inserted).toEqual({
       project_id: "project-1",
-      stage: "planning",
+      stage: "in_progress",
       content: "Cast on 40 stitches",
     });
   });
@@ -48,7 +54,12 @@ describe("insertProjectNote", () => {
       insertResult: { data: null, error: { message: "not allowed" } },
     });
 
-    const result = await insertProjectNote("project-1", "Hello", client);
+    const result = await insertProjectNote(
+      "project-1",
+      "Hello",
+      "completed",
+      client,
+    );
 
     expect(result).toEqual({ data: null, error: "not allowed" });
   });

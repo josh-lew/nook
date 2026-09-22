@@ -3,6 +3,7 @@ import {
   mapProjectListRow,
   pickLatestPhotoUrl,
   pickMaterialName,
+  pickProjectPhotoUrl,
   type ProjectListRow,
 } from "./get-projects-by-status";
 import { createMockProjectsClient } from "./test-utils";
@@ -24,11 +25,13 @@ const sampleRow: ProjectListRow = {
       id: "ph1",
       image_url: "https://example.com/old.jpg",
       created_at: "2026-01-01T00:00:00Z",
+      is_primary: false,
     },
     {
       id: "ph2",
       image_url: "https://example.com/new.jpg",
       created_at: "2026-01-03T00:00:00Z",
+      is_primary: false,
     },
   ],
   project_materials: [
@@ -56,6 +59,37 @@ describe("pickLatestPhotoUrl", () => {
 
   it("returns null when there are no photos", () => {
     expect(pickLatestPhotoUrl([])).toBeNull();
+  });
+});
+
+describe("pickProjectPhotoUrl", () => {
+  it("prefers the primary photo over a newer non-primary", () => {
+    expect(
+      pickProjectPhotoUrl([
+        {
+          id: "ph1",
+          image_url: "https://example.com/primary.jpg",
+          created_at: "2026-01-01T00:00:00Z",
+          is_primary: true,
+        },
+        {
+          id: "ph2",
+          image_url: "https://example.com/newer.jpg",
+          created_at: "2026-01-03T00:00:00Z",
+          is_primary: false,
+        },
+      ]),
+    ).toBe("https://example.com/primary.jpg");
+  });
+
+  it("falls back to the latest photo when none is primary", () => {
+    expect(pickProjectPhotoUrl(sampleRow.project_photos)).toBe(
+      "https://example.com/new.jpg",
+    );
+  });
+
+  it("returns null when there are no photos", () => {
+    expect(pickProjectPhotoUrl([])).toBeNull();
   });
 });
 
@@ -95,6 +129,28 @@ describe("mapProjectListRow", () => {
       hasPattern: true,
       materialName: "Chosen yarn",
     });
+  });
+
+  it("uses the primary photo when present", () => {
+    expect(
+      mapProjectListRow({
+        ...sampleRow,
+        project_photos: [
+          {
+            id: "ph1",
+            image_url: "https://example.com/primary.jpg",
+            created_at: "2026-01-01T00:00:00Z",
+            is_primary: true,
+          },
+          {
+            id: "ph2",
+            image_url: "https://example.com/newer.jpg",
+            created_at: "2026-01-03T00:00:00Z",
+            is_primary: false,
+          },
+        ],
+      }).photoUrl,
+    ).toBe("https://example.com/primary.jpg");
   });
 });
 
