@@ -245,7 +245,16 @@ export function StatusPage({
         {!loading && !error && projects.length > 0 ? (
           <View style={styles.list}>
             {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onPress={() => {
+                  router.push({
+                    pathname: "/project/[id]",
+                    params: { id: project.id },
+                  });
+                }}
+              />
             ))}
           </View>
         ) : null}

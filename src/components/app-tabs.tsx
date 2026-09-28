@@ -8,10 +8,16 @@ export default function AppTabs() {
   return (
     <NativeTabs
       backgroundColor={colors.background}
+      blurEffect="none"
+      disableTransparentOnScrollEdge
       indicatorColor={colors.surface}
       labelStyle={{ selected: { color: colors.primary } }}
+      shadowColor="transparent"
     >
-      <NativeTabs.Trigger name="index">
+      <NativeTabs.Trigger
+        name="index"
+        contentStyle={{ backgroundColor: colors.background }}
+      >
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require("@/assets/images/tabIcons/home.png")}
@@ -19,7 +25,10 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="explore">
+      <NativeTabs.Trigger
+        name="explore"
+        contentStyle={{ backgroundColor: colors.background }}
+      >
         <NativeTabs.Trigger.Label>Projects</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require("@/assets/images/tabIcons/explore.png")}

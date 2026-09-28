@@ -98,6 +98,10 @@ export type ProjectsQueryBuilder = {
     column: string,
     options?: { ascending?: boolean },
   ) => ProjectsQueryBuilder;
+  single: () => Promise<{
+    data: unknown;
+    error: { message: string } | null;
+  }>;
 } & PromiseLike<{
   data: unknown;
   error: { message: string } | null;

@@ -12,6 +12,12 @@ export default function AppLayout() {
           title: "Add Project",
         }}
       />
+      <Stack.Screen
+        name="project/[id]"
+        options={{
+          title: "Project",
+        }}
+      />
     </Stack>
   );
 }

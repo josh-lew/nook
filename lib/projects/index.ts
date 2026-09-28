@@ -17,6 +17,13 @@ export type {
 } from "./types";
 export type { InsertProjectNoteResult } from "./insert-project-note";
 export type {
+  ProjectDetail,
+  ProjectDetailMaterial,
+  ProjectDetailNote,
+  ProjectDetailPhoto,
+  ProjectDetailRow,
+} from "./get-project-by-id";
+export type {
   ProjectListItem,
   ProjectListRow,
 } from "./get-projects-by-status";
@@ -28,6 +35,10 @@ export { insertProjectPhoto } from "./insert-project-photo";
 export { insertProjectPhotos } from "./insert-project-photos";
 export { setPrimaryPhoto } from "./set-primary-photo";
 export { updateProject } from "./update-project";
+export {
+  getProjectById,
+  mapProjectDetailRow,
+} from "./get-project-by-id";
 export {
   getProjectsByStatus,
   mapProjectListRow,

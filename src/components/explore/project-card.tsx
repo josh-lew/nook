@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
@@ -15,19 +15,24 @@ const HOBBY_LABELS: Record<HobbyType, string> = {
 
 type ProjectCardProps = {
   project: ProjectListItem;
+  onPress: () => void;
 };
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onPress }: ProjectCardProps) {
   const theme = useTheme();
   const hobbyLabel = project.hobbyType
     ? HOBBY_LABELS[project.hobbyType]
     : null;
 
   return (
-    <View
-      style={[
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${project.title} project`}
+      onPress={onPress}
+      style={({ pressed }) => [
         styles.card,
         { backgroundColor: theme.surface },
+        pressed && styles.pressed,
       ]}
     >
       <View
@@ -81,7 +86,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </ThemedText>
         ) : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -114,5 +119,8 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.one,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.half,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

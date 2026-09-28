@@ -35,6 +35,7 @@ function createQueryBuilder(result: {
     eq: () => builder,
     is: () => builder,
     order: () => builder,
+    single: () => Promise.resolve(result),
     then: (onFulfilled, onRejected) =>
       Promise.resolve(result).then(onFulfilled, onRejected),
   };
