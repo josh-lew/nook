@@ -1,4 +1,4 @@
-import type { ProjectStatus, UploadFile } from "../../../lib/projects";
+import type { Stage, UploadFile } from "../../../lib/projects";
 
 export type ProjectPhotoType = "inspiration" | "progress" | "finished";
 
@@ -8,28 +8,28 @@ export type AdditionalPhotoDraft = {
   photoType: ProjectPhotoType;
 };
 
-export function defaultPhotoTypeForStatus(
-  status: ProjectStatus,
+export function defaultPhotoTypeForStage(
+  stage: Stage,
 ): ProjectPhotoType {
-  if (status === "in_progress") {
+  if (stage === "in_progress") {
     return "progress";
   }
-  if (status === "completed") {
+  if (stage === "completed") {
     return "finished";
   }
   return "inspiration";
 }
 
-export function photoTypeOptionsForStatus(
-  status: ProjectStatus,
+export function photoTypeOptionsForStage(
+  stage: Stage,
 ): { value: ProjectPhotoType; label: string }[] {
-  if (status === "in_progress") {
+  if (stage === "in_progress") {
     return [
       { value: "inspiration", label: "Inspiration" },
       { value: "progress", label: "Progress" },
     ];
   }
-  if (status === "completed") {
+  if (stage === "completed") {
     return [
       { value: "inspiration", label: "Inspiration" },
       { value: "progress", label: "Progress" },

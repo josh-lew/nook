@@ -2,15 +2,15 @@ import { supabase } from "../supabase";
 import type {
   DataResult,
   HobbyType,
-  ProjectStatus,
   ProjectsSupabaseClient,
+  Stage,
 } from "./types";
 
 export type ProjectListItem = {
   id: string;
   title: string;
   hobbyType: HobbyType | null;
-  status: ProjectStatus;
+  stage: Stage;
   photoUrl: string | null;
   hasPattern: boolean;
   hasMaterial: boolean;
@@ -36,7 +36,7 @@ export type ProjectListRow = {
   id: string;
   title: string;
   hobby_type: HobbyType | null;
-  status: ProjectStatus;
+  status: Stage;
   pattern_file_url: string | null;
   created_at: string;
   plan_order: number | null;
@@ -100,7 +100,7 @@ export function mapProjectListRow(row: ProjectListRow): ProjectListItem {
     id: row.id,
     title: row.title,
     hobbyType: row.hobby_type,
-    status: row.status,
+    stage: row.status,
     photoUrl: pickProjectPhotoUrl(row.project_photos),
     hasPattern: Boolean(row.pattern_file_url),
     hasMaterial: Boolean(row.project_materials?.length),
@@ -110,7 +110,7 @@ export function mapProjectListRow(row: ProjectListRow): ProjectListItem {
 }
 
 export async function getProjectsByStatus(
-  status: ProjectStatus,
+  stage: Stage,
   client: ProjectsSupabaseClient = supabase as unknown as ProjectsSupabaseClient,
 ): Promise<DataResult<ProjectListItem[]>> {
   const {
@@ -142,7 +142,7 @@ export async function getProjectsByStatus(
     `,
     )
     .eq("user_id", user.id)
-    .eq("status", status)
+    .eq("status", stage)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 

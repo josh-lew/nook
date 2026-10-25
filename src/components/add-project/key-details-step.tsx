@@ -6,7 +6,7 @@ import type { ProjectPhotoType } from "@/components/add-project/photo-type";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import type { HobbyType, ProjectStatus, UploadFile } from "../../../lib/projects";
+import type { HobbyType, Stage, UploadFile } from "../../../lib/projects";
 
 const HOBBY_OPTIONS: { value: HobbyType; label: string }[] = [
   { value: "crochet", label: "Crochet" },
@@ -14,7 +14,7 @@ const HOBBY_OPTIONS: { value: HobbyType; label: string }[] = [
   { value: "sewing", label: "Sewing" },
 ];
 
-const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
+const STAGE_OPTIONS: { value: Stage; label: string }[] = [
   { value: "planning", label: "Planning" },
   { value: "in_progress", label: "In Progress" },
   { value: "completed", label: "Completed" },
@@ -23,14 +23,14 @@ const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
 type KeyDetailsStepProps = {
   title: string;
   hobbyType: HobbyType | null;
-  status: ProjectStatus;
+  stage: Stage;
   primaryPhoto: UploadFile | null;
   primaryPhotoType: ProjectPhotoType;
   titleError?: string | null;
   hobbyError?: string | null;
   onChangeTitle: (value: string) => void;
   onChangeHobby: (value: HobbyType) => void;
-  onChangeStatus: (value: ProjectStatus) => void;
+  onChangeStage: (value: Stage) => void;
   onChangePrimaryPhoto: (file: UploadFile | null) => void;
   onChangePrimaryPhotoType: (value: ProjectPhotoType) => void;
 };
@@ -38,14 +38,14 @@ type KeyDetailsStepProps = {
 export function KeyDetailsStep({
   title,
   hobbyType,
-  status,
+  stage,
   primaryPhoto,
   primaryPhotoType,
   titleError,
   hobbyError,
   onChangeTitle,
   onChangeHobby,
-  onChangeStatus,
+  onChangeStage,
   onChangePrimaryPhoto,
   onChangePrimaryPhotoType,
 }: KeyDetailsStepProps) {
@@ -143,14 +143,14 @@ export function KeyDetailsStep({
           Status
         </ThemedText>
         <View style={styles.chips}>
-          {STATUS_OPTIONS.map((option) => {
-            const selected = status === option.value;
+          {STAGE_OPTIONS.map((option) => {
+            const selected = stage === option.value;
             return (
               <Pressable
                 key={option.value}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                onPress={() => onChangeStatus(option.value)}
+                onPress={() => onChangeStage(option.value)}
                 style={[
                   styles.chip,
                   {
@@ -203,7 +203,7 @@ export function KeyDetailsStep({
               </Pressable>
             </View>
             <PhotoTypeToggle
-              status={status}
+              stage={stage}
               value={primaryPhotoType}
               onChange={onChangePrimaryPhotoType}
             />

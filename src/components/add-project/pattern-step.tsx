@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
 import {
-  defaultPhotoTypeForStatus,
+  defaultPhotoTypeForStage,
   type AdditionalPhotoDraft,
   type ProjectPhotoType,
 } from "@/components/add-project/photo-type";
@@ -12,10 +12,10 @@ import { PhotoTypeToggle } from "@/components/add-project/photo-type-toggle";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import type { ProjectStatus, UploadFile } from "../../../lib/projects";
+import type { Stage, UploadFile } from "../../../lib/projects";
 
 type PatternStepProps = {
-  status: ProjectStatus;
+  stage: Stage;
   patternFile: UploadFile | null;
   additionalPhotos: AdditionalPhotoDraft[];
   onChangePatternFile: (file: UploadFile | null) => void;
@@ -23,7 +23,7 @@ type PatternStepProps = {
 };
 
 export function PatternStep({
-  status,
+  stage,
   patternFile,
   additionalPhotos,
   onChangePatternFile,
@@ -82,7 +82,7 @@ export function PatternStep({
       return;
     }
 
-    const defaultType = defaultPhotoTypeForStatus(status);
+    const defaultType = defaultPhotoTypeForStage(stage);
     const next: AdditionalPhotoDraft[] = result.assets.map((asset, index) => ({
       id: `${Date.now()}-${index}`,
       file: {
@@ -198,7 +198,7 @@ export function PatternStep({
               </Pressable>
             </View>
             <PhotoTypeToggle
-              status={status}
+              stage={stage}
               value={photo.photoType}
               onChange={(photoType) => updatePhotoType(photo.id, photoType)}
             />
