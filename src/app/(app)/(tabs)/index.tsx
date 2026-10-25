@@ -54,7 +54,7 @@ export default function Index() {
         onPress={() => router.push("/capture-idea")}
         style={({ pressed }) => [
           styles.fab,
-          { backgroundColor: theme.primary, bottom: BottomTabInset + Spacing.four },
+          { backgroundColor: theme.primary, bottom: BottomTabInset + Spacing.four + 10 },
           pressed && styles.pressed,
         ]}
       >
