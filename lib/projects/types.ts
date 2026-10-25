@@ -17,6 +17,12 @@ export type InsertProjectInput = {
   pattern_file_url?: string | null;
 };
 
+export type InsertIdeaInput = {
+  title: string;
+  description?: string | null;
+  hobby_type?: HobbyType | null;
+};
+
 export type InsertProjectMaterialInput = {
   name?: string | null;
   url?: string | null;
