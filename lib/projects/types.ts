@@ -36,6 +36,7 @@ export type UpdateProjectInput = {
   title?: string;
   hobby_type?: HobbyType;
   status?: Stage;
+  description?: string | null;
 };
 
 export type PhotoType = "inspiration" | "material" | "progress" | "finished";

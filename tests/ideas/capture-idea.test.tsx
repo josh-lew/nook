@@ -17,6 +17,14 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({ back: mockBack }),
 }));
 
+jest.mock("expo-image-picker", () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  launchImageLibraryAsync: jest.fn(async () => ({
+    canceled: false,
+    assets: [{ uri: "file:///tote.jpg", fileName: "tote.jpg", mimeType: "image/jpeg" }],
+  })),
+}));
+
 jest.mock("../../lib/projects", () => ({
   insertIdea: (...args: unknown[]) => mockInsertIdea(...args),
   uploadProjectPhoto: (...args: unknown[]) => mockUploadProjectPhoto(...args),
@@ -96,5 +104,30 @@ describe("Quick capture", () => {
 
     expect(await screen.findByText("Network down")).toBeOnTheScreen();
     expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it("locks the text fields after a photo fails, and retries only the photo", async () => {
+    mockUploadProjectPhoto
+      .mockResolvedValueOnce({ data: null, error: "Upload failed" })
+      .mockResolvedValueOnce({ data: { url: "https://x/tote.jpg" }, error: null });
+    mockInsertProjectPhoto.mockResolvedValue({ data: { id: "photo-1" }, error: null });
+    const user = userEvent.setup();
+    await renderCapture();
+
+    await user.type(screen.getByLabelText("Title"), "Tote");
+    await user.press(screen.getByRole("radio", { name: "Sewing" }));
+    await user.press(screen.getByRole("button", { name: "Add photos" }));
+    await screen.findByRole("button", { name: "Remove photo" });
+    await user.press(screen.getByRole("button", { name: "Save idea" }));
+
+    expect(await screen.findByText(/a photo didn’t upload/)).toBeOnTheScreen();
+    expect(screen.getByLabelText("Title")).toHaveProp("editable", false);
+    expect(screen.getByLabelText("Description")).toHaveProp("editable", false);
+
+    await user.press(screen.getByRole("button", { name: "Save idea" }));
+
+    await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    expect(mockInsertIdea).toHaveBeenCalledTimes(1);
+    expect(mockUploadProjectPhoto).toHaveBeenCalledTimes(2);
   });
 });

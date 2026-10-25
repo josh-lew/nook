@@ -9,7 +9,7 @@ import type {
 export type ProjectListItem = {
   id: string;
   title: string;
-  hobbyType: HobbyType | null;
+  hobbyType: HobbyType;
   stage: Stage;
   photoUrl: string | null;
   hasPattern: boolean;
@@ -35,7 +35,7 @@ type NestedMaterial = {
 export type ProjectListRow = {
   id: string;
   title: string;
-  hobby_type: HobbyType | null;
+  hobby_type: HobbyType;
   status: Stage;
   pattern_file_url: string | null;
   created_at: string;

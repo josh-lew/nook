@@ -51,7 +51,10 @@ export default function CaptureIdeaScreen() {
   const [saving, setSaving] = useState(false);
   const [ideaSaved, setIdeaSaved] = useState(false);
 
-  /** Set once the Idea row exists, so retrying a failed photo never duplicates it. */
+  /**
+   * Set once the Idea row exists, so retrying a failed photo never duplicates it.
+   * The text fields lock then too, since a retry only re-sends photos.
+   */
   const ideaIdRef = useRef<string | null>(null);
 
   const pickPhotos = async () => {
@@ -174,6 +177,7 @@ export default function CaptureIdeaScreen() {
           <TextInput
             accessibilityLabel="Title"
             autoFocus
+            editable={!saving && !ideaSaved}
             value={title}
             onChangeText={(value) => {
               setTitle(value);
@@ -306,6 +310,7 @@ export default function CaptureIdeaScreen() {
           </ThemedText>
           <TextInput
             accessibilityLabel="Description"
+            editable={!saving && !ideaSaved}
             value={description}
             onChangeText={setDescription}
             placeholder="What caught your eye?"

@@ -49,7 +49,7 @@ function PresenceLabel({ label, active }: { label: string; active: boolean }) {
 
 export function ProjectCard({ project, onPress }: ProjectCardProps) {
   const theme = useTheme();
-  const hobbyIcon = project.hobbyType ? HOBBY_ICONS[project.hobbyType] : null;
+  const hobbyIcon = HOBBY_ICONS[project.hobbyType];
 
   return (
     <Pressable
@@ -96,14 +96,12 @@ export function ProjectCard({ project, onPress }: ProjectCardProps) {
         </ThemedText>
       </View>
 
-      {hobbyIcon ? (
-        <Image
-          source={hobbyIcon}
-          style={styles.hobbyIcon}
-          contentFit="contain"
-          accessibilityLabel={`${project.hobbyType} project`}
-        />
-      ) : null}
+      <Image
+        source={hobbyIcon}
+        style={styles.hobbyIcon}
+        contentFit="contain"
+        accessibilityLabel={`${project.hobbyType} project`}
+      />
     </Pressable>
   );
 }
