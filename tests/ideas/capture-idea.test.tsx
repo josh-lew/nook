@@ -42,16 +42,18 @@ describe("Quick capture", () => {
     mockInsertIdea.mockResolvedValue({ data: { id: "idea-1" }, error: null });
   });
 
-  it("saves an Idea with only a title", async () => {
+  it("saves an Idea with only a title and hobby", async () => {
     const user = userEvent.setup();
     await renderCapture();
 
     await user.type(screen.getByLabelText("Title"), "Granny square bag");
+    await user.press(screen.getByRole("radio", { name: "Crochet" }));
     await user.press(screen.getByRole("button", { name: "Save idea" }));
 
     await waitFor(() => {
       expect(mockInsertIdea).toHaveBeenCalledWith({
         title: "Granny square bag",
+        hobby_type: "crochet",
         description: null,
       });
     });
@@ -63,10 +65,22 @@ describe("Quick capture", () => {
     const user = userEvent.setup();
     await renderCapture();
 
-    await user.type(screen.getByLabelText("Description"), "Saw it on Instagram");
+    await user.press(screen.getByRole("radio", { name: "Knit" }));
     await user.press(screen.getByRole("button", { name: "Save idea" }));
 
     expect(await screen.findByText("Title is required")).toBeOnTheScreen();
+    expect(mockInsertIdea).not.toHaveBeenCalled();
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it("can't save without a hobby", async () => {
+    const user = userEvent.setup();
+    await renderCapture();
+
+    await user.type(screen.getByLabelText("Title"), "Tote");
+    await user.press(screen.getByRole("button", { name: "Save idea" }));
+
+    expect(await screen.findByText("Hobby is required")).toBeOnTheScreen();
     expect(mockInsertIdea).not.toHaveBeenCalled();
     expect(mockBack).not.toHaveBeenCalled();
   });
@@ -77,6 +91,7 @@ describe("Quick capture", () => {
     await renderCapture();
 
     await user.type(screen.getByLabelText("Title"), "Tote");
+    await user.press(screen.getByRole("radio", { name: "Sewing" }));
     await user.press(screen.getByRole("button", { name: "Save idea" }));
 
     expect(await screen.findByText("Network down")).toBeOnTheScreen();

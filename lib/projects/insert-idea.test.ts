@@ -11,25 +11,28 @@ function insertedValues(client: ReturnType<typeof createMockProjectsClient>) {
 }
 
 describe("insertIdea", () => {
-  it("saves an Idea with only a title", async () => {
+  it("saves an Idea with only a title and hobby", async () => {
     const client = createMockProjectsClient({
       insertResult: { data: { id: "idea-1" }, error: null },
     });
 
-    const result = await insertIdea({ title: "  Granny square bag " }, client);
+    const result = await insertIdea(
+      { title: "  Granny square bag ", hobby_type: "crochet" },
+      client,
+    );
 
     expect(result).toEqual({ data: { id: "idea-1" }, error: null });
     expect(insertedValues(client)).toEqual({
       user_id: "user-1",
       title: "Granny square bag",
       description: null,
-      hobby_type: null,
+      hobby_type: "crochet",
       status: "idea",
       plan_order: 0,
     });
   });
 
-  it("saves the optional description and hobby", async () => {
+  it("saves the optional description", async () => {
     const client = createMockProjectsClient({});
 
     await insertIdea(
@@ -39,14 +42,26 @@ describe("insertIdea", () => {
 
     expect(insertedValues(client)).toMatchObject({
       description: "Saw it on Pinterest",
-      hobby_type: "knit",
     });
+  });
+
+  it("rejects a missing hobby without writing anything", async () => {
+    const client = createMockProjectsClient({});
+
+    const result = await insertIdea(
+      { title: "Hat", hobby_type: null as unknown as "knit" },
+      client,
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error).toMatch(/hobby/i);
+    expect(client.calls).toEqual([]);
   });
 
   it("rejects a blank title without writing anything", async () => {
     const client = createMockProjectsClient({});
 
-    const result = await insertIdea({ title: "   " }, client);
+    const result = await insertIdea({ title: "   ", hobby_type: "knit" }, client);
 
     expect(result.data).toBeNull();
     expect(result.error).toMatch(/title/i);
@@ -56,7 +71,7 @@ describe("insertIdea", () => {
   it("returns an error when the user is not signed in", async () => {
     const client = createMockProjectsClient({ user: null });
 
-    const result = await insertIdea({ title: "Hat" }, client);
+    const result = await insertIdea({ title: "Hat", hobby_type: "sewing" }, client);
 
     expect(result.data).toBeNull();
     expect(result.error).toMatch(/signed in/i);
@@ -67,7 +82,7 @@ describe("insertIdea", () => {
       insertResult: { data: null, error: { message: "check violation" } },
     });
 
-    const result = await insertIdea({ title: "Hat" }, client);
+    const result = await insertIdea({ title: "Hat", hobby_type: "sewing" }, client);
 
     expect(result).toEqual({ data: null, error: "check violation" });
   });
@@ -80,7 +95,7 @@ describe("insertIdea", () => {
       },
     });
 
-    await insertIdea({ title: "Tote" }, client);
+    await insertIdea({ title: "Tote", hobby_type: "sewing" }, client);
 
     expect(insertedValues(client)).toMatchObject({ plan_order: 6 });
     const rankQuery = client.calls.find((call) => call.kind === "select");

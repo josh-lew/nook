@@ -14,8 +14,8 @@ Once a Project exists, it can only be viewed, not added to, even though buying t
 
 Split the maker's world into **Ideas** and **Projects** (see `GLOSSARY.md`).
 
-- **Ideas** are captured in seconds from a floating button on Home: only a title is required, with optional inspiration photos, a description, Pattern Options and Material Options. Ideas live in their own tab, are manually ranked, and can be deleted.
-- **Promoting** an Idea turns it into a Project in Planning, asking only for the hobby. The Idea's photos and description are kept together as the Project's **Seed**, while its Pattern Options and Material Options stay live for her to choose from, labelled as coming from the Idea.
+- **Ideas** are captured in seconds from a floating button on Home: only a title and hobby are required, with optional inspiration photos, a description, Pattern Options and Material Options. Ideas live in their own tab, are manually ranked, and can be deleted.
+- **Promoting** an Idea turns it into a Project in Planning in a single step; the Idea's hobby carries over. The Idea's photos and description are kept together as the Project's **Seed**, while its Pattern Options and Material Options stay live for her to choose from, labelled as coming from the Idea.
 - **Projects** move through the Stages Planning → In progress → Completed, with Completed → In progress as the only way back. An In progress Project can be **Paused**, optionally with a note on where she got to.
 - A Project has at most one **Pattern**: a link and/or several **Pattern Files**. Choosing a Pattern Option makes it the Pattern.
 - The Project detail screen becomes a living document where everything can be added and edited, with sections ordered by Stage. Stage changes offer skippable prompts and never require anything.
@@ -29,11 +29,11 @@ Split the maker's world into **Ideas** and **Projects** (see `GLOSSARY.md`).
 ### Capturing Ideas
 
 1. As a maker, I want a floating button on Home that lets me save an Idea, so that I can capture something the moment I see it.
-2. As a maker, I want to save an Idea with only a title, so that capturing never feels like a chore.
+2. As a maker, I want to save an Idea with only a title and a hobby, so that capturing never feels like a chore.
 3. As a maker, I want to attach one or more screenshots from my camera roll to an Idea, so that I remember what caught my eye.
 4. As a maker, I want to add a short description to an Idea, so that I can note why I liked it or what I'd change.
-5. As a maker, I want to optionally set a hobby on an Idea, so that I can filter Ideas by craft when I know it.
-6. As a maker, I want to leave the hobby blank on an Idea, so that I'm not forced to decide before I've thought about it.
+5. As a maker, I want every Idea to have a hobby, so that I can always filter Ideas by craft.
+6. As a maker, I want to change an Idea's hobby later, so that a wrong first guess is easy to fix.
 7. As a maker, I want to add several Pattern Options to an Idea, each as a link and/or a screenshot with an optional comment, so that I can compare candidate patterns.
 8. As a maker, I want to add several Material Options to an Idea, each as a link and/or a screenshot with an optional comment, so that I can collect yarn and fabric candidates.
 9. As a maker, I want to add more photos, options or a description to an Idea later, so that an Idea can grow as I keep finding things.
@@ -44,7 +44,7 @@ Split the maker's world into **Ideas** and **Projects** (see `GLOSSARY.md`).
 11. As a maker, I want to drag my Ideas into my own order, so that the ones I'm most excited about sit at the top.
 12. As a maker, I want new Ideas to appear at the bottom of my ranking, so that capturing something doesn't disturb my order.
 13. As a maker, I want to filter Ideas by hobby, so that I can see only crochet Ideas when I'm in a crochet mood.
-14. As a maker, I want Ideas without a hobby to still appear when no filter is applied, so that nothing gets lost.
+14. As a maker, I want every Idea to appear when no filter is applied, so that nothing gets lost.
 15. As a maker, I want to sort Ideas by my order, newest, oldest or A–Z, so that I can find things different ways.
 16. As a maker, I want to delete an Idea I've gone off, so that I can tidy up when I feel like it.
 17. As a maker, I want deleting an Idea to be recoverable behind the scenes (soft delete), so that an accidental delete isn't catastrophic.
@@ -52,8 +52,8 @@ Split the maker's world into **Ideas** and **Projects** (see `GLOSSARY.md`).
 ### Promoting an Idea
 
 18. As a maker, I want to Promote an Idea into a Project, so that I can commit to making it.
-19. As a maker, I want Promoting to ask only for the hobby, so that committing is a single step.
-20. As a maker, I want the hobby to be pre-filled if the Idea already had one, so that I don't re-enter it.
+19. As a maker, I want Promoting to ask for nothing new, so that committing is a single step.
+20. As a maker, I want the Idea's hobby to carry over when I Promote, so that I don't re-enter it.
 21. As a maker, I want Promoting to never ask me to pick a pattern, so that I can commit before I've decided.
 22. As a maker, I want a Promoted Idea to land at the bottom of my Planning ranking, so that my existing plan order is respected.
 23. As a maker, I want a Promoted Idea to disappear from my Ideas, so that it isn't in two places.
@@ -156,18 +156,18 @@ Split the maker's world into **Ideas** and **Projects** (see `GLOSSARY.md`).
 
 - Language follows `GLOSSARY.md`: Idea, Project, Stage, Paused, Promote, Seed, Pattern, Pattern File, Pattern Option, Material Option, Gallery.
 - Allowed Stage moves: Planning → In progress, In progress → Completed, Completed → In progress. Every other move, and any move into or out of Idea except Promote, is rejected with a `DataResult` error.
-- Promote is only valid from Idea, requires a hobby, and moves to Planning.
+- Promote is only valid from Idea and moves to Planning. The hobby carries over from the Idea.
 - Pause/resume is only valid for In progress. Moving a Paused Project to Completed clears Paused.
 - Entering Completed sets the completion date; leaving Completed clears it.
 - Entering a list (Promote, Stage change, pause, resume, create) places the item at the bottom of that list's ranking.
-- Nothing other than title (and hobby, for Projects) is ever required.
+- Nothing other than title and hobby is ever required.
 
 ### Schema (next numbered script, plus RLS/storage updates as needed)
 
 Ideas share the `projects` table (ADR-0001). Existing data is test data only, so old columns are dropped rather than migrated.
 
 - `projects.status` check gains `idea`. New rows from quick capture use `idea`.
-- New check: `status = 'idea' or hobby_type is not null`.
+- `hobby_type` is not null for every row, Ideas included. (07 first added `status = 'idea' or hobby_type is not null`; 08 replaced it once Ideas also required a hobby.)
 - `projects` gains:
   - `description text`
   - `seed_description text`: a frozen snapshot of the Idea's description taken at Promote
@@ -187,9 +187,9 @@ Ideas share the `projects` table (ADR-0001). Existing data is test data only, so
 
 - Types distinguish `Stage` (`planning | in_progress | completed`) from the row status, which also allows `idea`.
 - New or changed functions (indicative names):
-  - `insertIdea({ title, description?, hobby_type? })`
+  - `insertIdea({ title, hobby_type, description? })`
   - `getIdeas({ hobby?, sort })`
-  - `promoteIdea(id, hobby)`
+  - `promoteIdea(id)`
   - `changeStage(id, to)`
   - `pauseProject(id, note?)` and `resumeProject(id)`
   - `reorderList(orderedIds)`, which rewrites ranks for one list
@@ -219,9 +219,9 @@ Ideas share the `projects` table (ADR-0001). Existing data is test data only, so
   - Four carousels in this order: In progress (active only), Up next, Ideas, Recently completed. Each has "See all".
   - Floating bottom-right quick-capture button.
   - The carousel set is a trial; expect changes after user feedback.
-- Quick capture: a modal with title (required), photos (optional), description (optional). It saves straight to Ideas.
+- Quick capture: a modal with title (required), hobby (required), photos (optional), description (optional). It saves straight to Ideas.
 - Idea screen: editable title, hobby, description, photos, Pattern Options and Material Options, plus Promote and Delete actions.
-- Promote sheet: hobby picker only, pre-filled from the Idea, and cannot submit without a hobby.
+- Promote: a single confirmation; the Idea's hobby carries over.
 - Project screen: the same sections at every Stage, ordered by Stage (as in the user stories). The Seed box sits near the bottom. Stage actions: Start, Complete, Pause/Resume, Reopen (Completed → In progress).
 - Stage prompts: Start offers Pattern and materials confirmation; Complete offers finished photos and a cover; Pause offers a note. All are skippable sheets.
 - Ranking via drag to reorder on the Ideas, Planning, active In progress and Paused lists. Filter (hobby) and sort controls on every list.
@@ -231,7 +231,7 @@ Ideas share the `projects` table (ADR-0001). Existing data is test data only, so
 
 - Good tests exercise external behaviour through the highest seam: call the public data-layer function with an injected fake client and assert on the returned `DataResult` and the writes sent to the client. They do not test private helpers or the internal query-building order.
 - **Primary seam: the `lib/projects` data-layer functions.** Cover:
-  - Promote: hobby required; status becomes Planning; `promoted_at` and `seed_description` set; bottom rank.
+  - Promote: hobby carried over; status becomes Planning; `promoted_at` and `seed_description` set; bottom rank.
   - Every allowed and disallowed Stage move, including completion date set and cleared.
   - Pause/resume validity, the pause note written as a Note, and Paused cleared on complete.
   - `choosePatternOption` select, switch and clear.
@@ -240,8 +240,7 @@ Ideas share the `projects` table (ADR-0001). Existing data is test data only, so
   - Detail mapping: the derived Pattern, from-Idea flags, Seed present only when Promoted.
 - The shared mock client (`createMockProjectsClient`) needs extending for the new call shapes (delete, `in`, `not`, multi-row updates). Prior art: the existing `lib/projects/*.test.ts` files, e.g. the `updateProject` and `setPrimaryPhoto` tests.
 - **Secondary seam: screen tests** with `@testing-library/react-native`, mocking `expo-router` and the auth context, used only for:
-  - quick capture saving an Idea with only a title
-  - the Promote sheet requiring a hobby
+  - quick capture saving an Idea with only a title and hobby
 
   Prior art: the login screen test.
 - Carousels, Gallery grid, detail-screen ordering and drag-to-reorder are verified manually in the running app.

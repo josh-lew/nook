@@ -14,6 +14,10 @@ export async function insertIdea(
     return { data: null, error: "An idea needs a title." };
   }
 
+  if (!input.hobby_type) {
+    return { data: null, error: "An idea needs a hobby." };
+  }
+
   const {
     data: { user },
     error: userError,
@@ -49,7 +53,7 @@ export async function insertIdea(
       user_id: user.id,
       title,
       description: input.description?.trim() || null,
-      hobby_type: input.hobby_type ?? null,
+      hobby_type: input.hobby_type,
       status: "idea",
       plan_order: nextRank,
     })

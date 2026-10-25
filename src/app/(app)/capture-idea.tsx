@@ -21,8 +21,15 @@ import {
   insertIdea,
   insertProjectPhoto,
   uploadProjectPhoto,
+  type HobbyType,
   type UploadFile,
 } from "../../../lib/projects";
+
+const HOBBY_OPTIONS: { value: HobbyType; label: string }[] = [
+  { value: "crochet", label: "Crochet" },
+  { value: "knit", label: "Knit" },
+  { value: "sewing", label: "Sewing" },
+];
 
 type PhotoDraft = {
   id: string;
@@ -35,9 +42,11 @@ export default function CaptureIdeaScreen() {
   const theme = useTheme();
 
   const [title, setTitle] = useState("");
+  const [hobbyType, setHobbyType] = useState<HobbyType | null>(null);
   const [description, setDescription] = useState("");
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [titleError, setTitleError] = useState<string | null>(null);
+  const [hobbyError, setHobbyError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [ideaSaved, setIdeaSaved] = useState(false);
@@ -80,12 +89,13 @@ export default function CaptureIdeaScreen() {
   };
 
   const handleSave = async () => {
-    if (!title.trim()) {
-      setTitleError("Title is required");
+    const missingTitle = !title.trim();
+    setTitleError(missingTitle ? "Title is required" : null);
+    setHobbyError(hobbyType ? null : "Hobby is required");
+    if (missingTitle || !hobbyType) {
       return;
     }
 
-    setTitleError(null);
     setSubmitError(null);
     setSaving(true);
 
@@ -93,6 +103,7 @@ export default function CaptureIdeaScreen() {
     if (!ideaId) {
       const result = await insertIdea({
         title: title.trim(),
+        hobby_type: hobbyType,
         description: description.trim() || null,
       });
 
@@ -147,7 +158,7 @@ export default function CaptureIdeaScreen() {
       <View style={styles.header}>
         <ThemedText type="smallBold">New Idea</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Only a title is needed. Add more whenever you like.
+          Just a title and hobby. Add more whenever you like.
         </ThemedText>
       </View>
 
@@ -184,6 +195,48 @@ export default function CaptureIdeaScreen() {
           {titleError ? (
             <ThemedText type="small" style={{ color: theme.error }}>
               {titleError}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        <View style={styles.field}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Hobby
+          </ThemedText>
+          <View accessibilityRole="radiogroup" style={styles.chips}>
+            {HOBBY_OPTIONS.map((option) => {
+              const selected = hobbyType === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="radio"
+                  accessibilityLabel={option.label}
+                  accessibilityState={{ checked: selected }}
+                  disabled={saving || ideaSaved}
+                  onPress={() => {
+                    setHobbyType(option.value);
+                    setHobbyError(null);
+                  }}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: selected ? theme.border : theme.surface,
+                      borderColor: selected
+                        ? theme.primary
+                        : hobbyError
+                          ? theme.error
+                          : theme.border,
+                    },
+                  ]}
+                >
+                  <ThemedText type="small">{option.label}</ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+          {hobbyError ? (
+            <ThemedText type="small" style={{ color: theme.error }}>
+              {hobbyError}
             </ThemedText>
           ) : null}
         </View>
@@ -342,6 +395,17 @@ const styles = StyleSheet.create({
   multiline: {
     minHeight: 96,
     textAlignVertical: "top",
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.two,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
   },
   photos: {
     flexDirection: "row",

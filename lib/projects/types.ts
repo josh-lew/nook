@@ -19,8 +19,8 @@ export type InsertProjectInput = {
 
 export type InsertIdeaInput = {
   title: string;
+  hobby_type: HobbyType;
   description?: string | null;
-  hobby_type?: HobbyType | null;
 };
 
 export type InsertProjectMaterialInput = {

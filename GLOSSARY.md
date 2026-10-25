@@ -2,7 +2,7 @@
 
 ## Idea
 
-A low-effort capture of something the maker might want to make one day. Only a title is required; it may also hold inspiration photos, a description, Pattern Options and Material Options. Ideas are deliberately loose and quick to create, and are ranked by the maker. An Idea she loses interest in sinks down the ranking or is deleted.
+A low-effort capture of something the maker might want to make one day. Only a title and a hobby are required; it may also hold inspiration photos, a description, Pattern Options and Material Options. Ideas are deliberately loose and quick to create, and are ranked by the maker. An Idea she loses interest in sinks down the ranking or is deleted.
 
 _Avoid_: draft, wishlist item, "planning project".
 
@@ -24,7 +24,7 @@ _Avoid_: hibernating, abandoned, on hold.
 
 ## Promote
 
-To turn an Idea into a Project, entering the Planning Stage. Only the hobby must be chosen. The Idea ceases to exist as an Idea; its content becomes the Project's Seed.
+To turn an Idea into a Project, entering the Planning Stage. Nothing new is asked for: the Idea's hobby carries over. The Idea ceases to exist as an Idea; its content becomes the Project's Seed.
 
 _Avoid_: convert, start (starting means moving a Project to In progress).
 
