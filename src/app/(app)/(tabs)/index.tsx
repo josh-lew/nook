@@ -4,7 +4,7 @@ import { Pressable, StyleSheet } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import { useThemePreference } from "@/contexts/theme-preference-context";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -54,7 +54,7 @@ export default function Index() {
         onPress={() => router.push("/capture-idea")}
         style={({ pressed }) => [
           styles.fab,
-          { backgroundColor: theme.primary, bottom: BottomTabInset + Spacing.four + 10 },
+          { backgroundColor: theme.primary, bottom: Spacing.four, right: Spacing.five },
           pressed && styles.pressed,
         ]}
       >
@@ -87,7 +87,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    right: Spacing.four,
     width: 56,
     height: 56,
     borderRadius: 28,
