@@ -7,6 +7,8 @@ export type ThemeColors = {
   background: string;
   surface: string;
   primary: string;
+  /** Text and icons drawn on top of `primary` */
+  onPrimary: string;
   secondary: string;
   textPrimary: string;
   textSecondary: string;
@@ -14,51 +16,30 @@ export type ThemeColors = {
   error: string;
 };
 
+// Cosy, earthy palette: oat and linen neutrals, sage accent, terracotta secondary
 export const lightColors: ThemeColors = {
-  background: "#f8f7f2",
-  surface: "#d8e3df",
-  primary: "#cdefeb",
-  secondary: "#B8A9D9",
-  textPrimary: "#212121",
-  textSecondary: "#415e66",
-  border: "#F0DDD6",
-  error: "#B5544A",
+  background: "#F8F2E8", // oat
+  surface: "#E9D6B8", // linen
+  primary: "#5E6E44", // sage
+  onPrimary: "#FBF4E9",
+  secondary: "#A9512E", // terracotta
+  textPrimary: "#2E2018", // cocoa
+  textSecondary: "#5A4535", // walnut
+  border: "#CDB089",
+  error: "#9B2F2F",
 };
-// keeping this for reference
-// export const lightColors: ThemeColors = {
-//   background: "#f8f7f2",
-//   surface: "#d8e3df",
-//   primary: "#9eb36b",
-//   secondary: "#B8A9D9",
-//   textPrimary: "#4A3B3B",
-//   textSecondary: "#6C574B",
-//   border: "#F0DDD6",
-//   error: "#B5544A",
-// };
 
-// temporarily using light colors for dark theme
 export const darkColors: ThemeColors = {
-  background: "#f8f7f2",
-  surface: "#d8e3df",
-  primary: "#cdefeb",
-  secondary: "#B8A9D9",
-  textPrimary: "#212121",
-  textSecondary: "#415e66",
-  border: "#F0DDD6",
-  error: "#B5544A",
+  background: "#221A15", // dark walnut
+  surface: "#3A2D24",
+  primary: "#A8B98A", // soft sage
+  onPrimary: "#221A15",
+  secondary: "#E0895E", // warm clay
+  textPrimary: "#F3E9DC",
+  textSecondary: "#C4B19C",
+  border: "#5A4838",
+  error: "#E8857A",
 };
-
-// keeping this for reference
-// export const darkColors: ThemeColors = {
-//   background: "#2B2129",
-//   surface: "#362A33",
-//   primary: "#E8A8A8",
-//   secondary: "#C7B8E0",
-//   textPrimary: "#F5EAE7",
-//   textSecondary: "#B39FA5",
-//   border: "#453740",
-//   error: "#E89A8A",
-// };
 
 /** @deprecated Prefer lightColors / darkColors — kept for keyed lookup */
 export const Colors = {

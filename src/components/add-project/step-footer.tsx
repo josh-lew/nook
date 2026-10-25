@@ -89,9 +89,9 @@ export function StepFooter({
                 ]}
               >
                 {saving ? (
-                  <ActivityIndicator color={theme.background} />
+                  <ActivityIndicator color={theme.onPrimary} />
                 ) : (
-                  <ThemedText style={{ color: theme.background }}>Save</ThemedText>
+                  <ThemedText style={{ color: theme.onPrimary }}>Save</ThemedText>
                 )}
               </Pressable>
             </>
@@ -106,7 +106,7 @@ export function StepFooter({
                 pressed && styles.pressed,
               ]}
             >
-              <ThemedText style={{ color: theme.background }}>Next</ThemedText>
+              <ThemedText style={{ color: theme.onPrimary }}>Next</ThemedText>
             </Pressable>
           )}
         </View>

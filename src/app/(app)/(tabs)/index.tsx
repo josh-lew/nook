@@ -61,7 +61,7 @@ export default function Index() {
         <SymbolView
           name={{ ios: "plus", android: "add", web: "add" }}
           size={26}
-          tintColor={theme.textPrimary}
+          tintColor={theme.onPrimary}
         />
       </Pressable>
     </ThemedView>

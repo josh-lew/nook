@@ -35,12 +35,12 @@ export function AuthButton({
         (pressed || isDisabled) && styles.pressed,
       ]}>
       {loading ? (
-        <ActivityIndicator color={isPrimary ? theme.background : theme.textPrimary} />
+        <ActivityIndicator color={isPrimary ? theme.onPrimary : theme.textPrimary} />
       ) : (
         <Text
           style={[
             styles.label,
-            { color: isPrimary ? theme.background : theme.textPrimary },
+            { color: isPrimary ? theme.onPrimary : theme.textPrimary },
           ]}>
           {label}
         </Text>
