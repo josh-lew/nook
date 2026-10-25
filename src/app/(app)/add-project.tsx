@@ -1,4 +1,8 @@
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import {
+  useLocalSearchParams,
+  usePreventRemove,
+  useRouter,
+} from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -105,7 +109,6 @@ function hasPendingExtras(
 
 export default function AddProjectScreen() {
   const router = useRouter();
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const params = useLocalSearchParams<{ status?: string }>();
@@ -132,7 +135,6 @@ export default function AddProjectScreen() {
   const [saving, setSaving] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
 
-  const allowLeaveRef = useRef(false);
   const projectIdRef = useRef<string | null>(null);
   const completedRef = useRef<CompletedExtras>({ ...EMPTY_COMPLETED });
   const formRef = useRef(form);
@@ -150,10 +152,44 @@ export default function AddProjectScreen() {
     }));
   }, [initialStatus]);
 
+  const shouldConfirmLeave =
+    !saving && (projectId !== null || isDirty(form, initialStatus));
+
+  const disableLeavePrevention = usePreventRemove(
+    shouldConfirmLeave,
+    ({ repeat }) => {
+      if (projectIdRef.current) {
+        if (!hasPendingExtras(formRef.current, completedRef.current)) {
+          repeat();
+          return;
+        }
+
+        Alert.alert(
+          "Leave this project?",
+          "Your project is already saved. Anything that hasn’t finished uploading won’t be added.",
+          [
+            { text: "Keep editing", style: "cancel" },
+            { text: "Leave", style: "destructive", onPress: repeat },
+          ],
+        );
+        return;
+      }
+
+      Alert.alert(
+        "Discard this project?",
+        "Your entered details will be lost.",
+        [
+          { text: "Keep editing", style: "cancel" },
+          { text: "Discard", style: "destructive", onPress: repeat },
+        ],
+      );
+    },
+  );
+
   const leave = useCallback(() => {
-    allowLeaveRef.current = true;
+    disableLeavePrevention();
     router.back();
-  }, [router]);
+  }, [disableLeavePrevention, router]);
 
   const requestClose = useCallback(() => {
     if (projectIdRef.current) {
@@ -188,66 +224,6 @@ export default function AddProjectScreen() {
     ]);
   }, [form, initialStatus, leave]);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener(
-      "beforeRemove",
-      (event: {
-        preventDefault: () => void;
-        data: { action: unknown };
-      }) => {
-        if (allowLeaveRef.current || saving) {
-          return;
-        }
-
-        if (projectIdRef.current) {
-          if (!hasPendingExtras(formRef.current, completedRef.current)) {
-            return;
-          }
-
-          event.preventDefault();
-          Alert.alert(
-            "Leave this project?",
-            "Your project is already saved. Anything that hasn’t finished uploading won’t be added.",
-            [
-              { text: "Keep editing", style: "cancel" },
-              {
-                text: "Leave",
-                style: "destructive",
-                onPress: () => {
-                  allowLeaveRef.current = true;
-                  navigation.dispatch(event.data.action as never);
-                },
-              },
-            ],
-          );
-          return;
-        }
-
-        if (!isDirty(form, initialStatus)) {
-          return;
-        }
-
-        event.preventDefault();
-        Alert.alert(
-          "Discard this project?",
-          "Your entered details will be lost.",
-          [
-            { text: "Keep editing", style: "cancel" },
-            {
-              text: "Discard",
-              style: "destructive",
-              onPress: () => {
-                allowLeaveRef.current = true;
-                navigation.dispatch(event.data.action as never);
-              },
-            },
-          ],
-        );
-      },
-    );
-
-    return unsubscribe;
-  }, [form, initialStatus, navigation, saving]);
 
   const validateStepOne = () => {
     let ok = true;
