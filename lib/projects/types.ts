@@ -1,8 +1,10 @@
 export type HobbyType = "crochet" | "knit" | "sewing";
 
-export type ProjectStatus = "planning" | "in_progress" | "completed";
+/** Where a Project is in its life. An Idea has no Stage. */
+export type Stage = "planning" | "in_progress" | "completed";
 
-export type NoteStage = "planning" | "in_progress" | "completed";
+/** The stored `projects.status`: a Project's Stage, or `idea` for an Idea. */
+export type ProjectStatus = "idea" | Stage;
 
 export type DataResult<T> =
   | { data: T; error: null }
@@ -11,7 +13,7 @@ export type DataResult<T> =
 export type InsertProjectInput = {
   title: string;
   hobby_type: HobbyType;
-  status?: ProjectStatus;
+  status?: Stage;
   pattern_file_url?: string | null;
 };
 
@@ -27,14 +29,14 @@ export type UpdateProjectInput = {
   pattern_file_url?: string | null;
   title?: string;
   hobby_type?: HobbyType;
-  status?: ProjectStatus;
+  status?: Stage;
 };
 
 export type PhotoType = "inspiration" | "material" | "progress" | "finished";
 
 export type InsertProjectPhotoInput = {
   image_url: string;
-  stage?: NoteStage;
+  stage?: Stage;
   photo_type?: PhotoType;
   is_primary?: boolean;
 };
@@ -42,7 +44,7 @@ export type InsertProjectPhotoInput = {
 /** Singular insert: photo_type is required; no inference in the data layer. */
 export type InsertProjectPhotoArgs = {
   image_url: string;
-  stage: NoteStage;
+  stage: Stage;
   photo_type: "inspiration" | "progress" | "finished";
   is_primary?: boolean;
 };
@@ -56,12 +58,27 @@ export type ProjectsUpdateBuilder = {
     column: string,
     value: string | boolean,
   ) => ProjectsUpdateBuilder;
+  in: (
+    column: string,
+    values: readonly (string | number)[],
+  ) => ProjectsUpdateBuilder;
   select: (columns?: string) => {
     single: () => Promise<{
       data: { id: string } | null;
       error: { message: string } | null;
     }>;
   };
+} & PromiseLike<{
+  data: unknown;
+  error: { message: string } | null;
+}>;
+
+export type ProjectsDeleteBuilder = {
+  eq: (column: string, value: string | boolean) => ProjectsDeleteBuilder;
+  in: (
+    column: string,
+    values: readonly (string | number)[],
+  ) => ProjectsDeleteBuilder;
 } & PromiseLike<{
   data: unknown;
   error: { message: string } | null;
@@ -87,13 +104,26 @@ export type ProjectsSupabaseClient = {
       error: { message: string } | null;
     }>;
     update: (values: unknown) => ProjectsUpdateBuilder;
+    delete: () => ProjectsDeleteBuilder;
     select: (columns?: string) => ProjectsQueryBuilder;
   };
 };
 
 export type ProjectsQueryBuilder = {
-  eq: (column: string, value: string) => ProjectsQueryBuilder;
+  eq: (
+    column: string,
+    value: string | number | boolean,
+  ) => ProjectsQueryBuilder;
   is: (column: string, value: null) => ProjectsQueryBuilder;
+  in: (
+    column: string,
+    values: readonly (string | number)[],
+  ) => ProjectsQueryBuilder;
+  not: (
+    column: string,
+    operator: string,
+    value: string | number | boolean | null,
+  ) => ProjectsQueryBuilder;
   order: (
     column: string,
     options?: { ascending?: boolean },

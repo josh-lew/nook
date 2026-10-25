@@ -21,7 +21,7 @@ import {
 import { NotesStep } from "@/components/add-project/notes-step";
 import { PatternStep } from "@/components/add-project/pattern-step";
 import {
-  defaultPhotoTypeForStatus,
+  defaultPhotoTypeForStage,
   type AdditionalPhotoDraft,
   type ProjectPhotoType,
 } from "@/components/add-project/photo-type";
@@ -37,7 +37,7 @@ import {
   insertProjectMaterials,
   insertProjectNote,
   insertProjectPhoto,
-  ProjectStatus,
+  Stage,
   updateProject,
   UploadFile,
   uploadPatternFile,
@@ -47,7 +47,7 @@ import {
 type FormState = {
   title: string;
   hobbyType: HobbyType | null;
-  status: ProjectStatus;
+  stage: Stage;
   primaryPhoto: UploadFile | null;
   primaryPhotoType: ProjectPhotoType;
   patternFile: UploadFile | null;
@@ -73,7 +73,7 @@ const EMPTY_COMPLETED: CompletedExtras = {
   note: false,
 };
 
-function parseStatus(value: string | string[] | undefined): ProjectStatus {
+function parseStage(value: string | string[] | undefined): Stage {
   const raw = Array.isArray(value) ? value[0] : value;
   if (raw === "in_progress" || raw === "completed" || raw === "planning") {
     return raw;
@@ -81,11 +81,11 @@ function parseStatus(value: string | string[] | undefined): ProjectStatus {
   return "planning";
 }
 
-function isDirty(form: FormState, initialStatus: ProjectStatus): boolean {
+function isDirty(form: FormState, initialStage: Stage): boolean {
   return (
     form.title.trim().length > 0 ||
     form.hobbyType !== null ||
-    form.status !== initialStatus ||
+    form.stage !== initialStage ||
     form.primaryPhoto !== null ||
     form.patternFile !== null ||
     form.additionalPhotos.length > 0 ||
@@ -112,8 +112,8 @@ export default function AddProjectScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const params = useLocalSearchParams<{ status?: string }>();
-  const initialStatus = useMemo(
-    () => parseStatus(params.status),
+  const initialStage = useMemo(
+    () => parseStage(params.status),
     [params.status],
   );
 
@@ -121,9 +121,9 @@ export default function AddProjectScreen() {
   const [form, setForm] = useState<FormState>({
     title: "",
     hobbyType: null,
-    status: initialStatus,
+    stage: initialStage,
     primaryPhoto: null,
-    primaryPhotoType: defaultPhotoTypeForStatus(initialStatus),
+    primaryPhotoType: defaultPhotoTypeForStage(initialStage),
     patternFile: null,
     additionalPhotos: [],
     materials: [],
@@ -143,17 +143,17 @@ export default function AddProjectScreen() {
   useEffect(() => {
     setForm((current) => ({
       ...current,
-      status: initialStatus,
-      primaryPhotoType: defaultPhotoTypeForStatus(initialStatus),
+      stage: initialStage,
+      primaryPhotoType: defaultPhotoTypeForStage(initialStage),
       additionalPhotos: current.additionalPhotos.map((photo) => ({
         ...photo,
-        photoType: defaultPhotoTypeForStatus(initialStatus),
+        photoType: defaultPhotoTypeForStage(initialStage),
       })),
     }));
-  }, [initialStatus]);
+  }, [initialStage]);
 
   const shouldConfirmLeave =
-    !saving && (projectId !== null || isDirty(form, initialStatus));
+    !saving && (projectId !== null || isDirty(form, initialStage));
 
   const disableLeavePrevention = usePreventRemove(
     shouldConfirmLeave,
@@ -209,7 +209,7 @@ export default function AddProjectScreen() {
       return;
     }
 
-    if (!isDirty(form, initialStatus)) {
+    if (!isDirty(form, initialStage)) {
       leave();
       return;
     }
@@ -222,7 +222,7 @@ export default function AddProjectScreen() {
         onPress: leave,
       },
     ]);
-  }, [form, initialStatus, leave]);
+  }, [form, initialStage, leave]);
 
 
   const validateStepOne = () => {
@@ -255,11 +255,11 @@ export default function AddProjectScreen() {
     setStepIndex((current) => Math.max(current - 1, 0));
   };
 
-  const applyStatusChange = (status: ProjectStatus) => {
-    const photoType = defaultPhotoTypeForStatus(status);
+  const applyStageChange = (stage: Stage) => {
+    const photoType = defaultPhotoTypeForStage(stage);
     setForm((current) => ({
       ...current,
-      status,
+      stage,
       primaryPhotoType: photoType,
       additionalPhotos: current.additionalPhotos.map((photo) => ({
         ...photo,
@@ -341,7 +341,7 @@ export default function AddProjectScreen() {
       const projectResult = await insertProject({
         title: formSnapshot.title.trim(),
         hobby_type: formSnapshot.hobbyType,
-        status: formSnapshot.status,
+        status: formSnapshot.stage,
       });
 
       if (projectResult.error || !projectResult.data) {
@@ -357,7 +357,7 @@ export default function AddProjectScreen() {
       const updateResult = await updateProject(activeProjectId, {
         title: formSnapshot.title.trim(),
         hobby_type: formSnapshot.hobbyType,
-        status: formSnapshot.status,
+        status: formSnapshot.stage,
       });
 
       if (updateResult.error) {
@@ -383,7 +383,7 @@ export default function AddProjectScreen() {
 
       const photoResult = await insertProjectPhoto(activeProjectId, {
         image_url: uploadResult.data.url,
-        stage: formSnapshot.status,
+        stage: formSnapshot.stage,
         photo_type: formSnapshot.primaryPhotoType,
         is_primary: true,
       });
@@ -442,7 +442,7 @@ export default function AddProjectScreen() {
 
         const photoResult = await insertProjectPhoto(activeProjectId, {
           image_url: uploadResult.data.url,
-          stage: formSnapshot.status,
+          stage: formSnapshot.stage,
           photo_type: photo.photoType,
           is_primary: false,
         });
@@ -501,7 +501,7 @@ export default function AddProjectScreen() {
       const noteResult = await insertProjectNote(
         activeProjectId,
         formSnapshot.note,
-        formSnapshot.status,
+        formSnapshot.stage,
       );
       if (noteResult.error) {
         setSaving(false);
@@ -546,7 +546,7 @@ export default function AddProjectScreen() {
             <KeyDetailsStep
               title={form.title}
               hobbyType={form.hobbyType}
-              status={form.status}
+              stage={form.stage}
               primaryPhoto={form.primaryPhoto}
               primaryPhotoType={form.primaryPhotoType}
               titleError={titleError}
@@ -557,7 +557,7 @@ export default function AddProjectScreen() {
               onChangeHobby={(hobbyType) =>
                 setForm((current) => ({ ...current, hobbyType }))
               }
-              onChangeStatus={applyStatusChange}
+              onChangeStage={applyStageChange}
               onChangePrimaryPhoto={(primaryPhoto) =>
                 setForm((current) => ({ ...current, primaryPhoto }))
               }
@@ -569,7 +569,7 @@ export default function AddProjectScreen() {
 
           {stepIndex === 1 ? (
             <PatternStep
-              status={form.status}
+              stage={form.stage}
               patternFile={form.patternFile}
               additionalPhotos={form.additionalPhotos}
               onChangePatternFile={(patternFile) =>

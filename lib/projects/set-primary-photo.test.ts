@@ -10,7 +10,7 @@ describe("setPrimaryPhoto", () => {
     const updates: {
       values: unknown;
       column: string;
-      value: string | boolean;
+      value: unknown;
     }[] = [];
     const client = createMockProjectsClient({
       onUpdate: (values, column, value) => {

@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import type { DataResult, NoteStage, ProjectsSupabaseClient } from "./types";
+import type { DataResult, ProjectsSupabaseClient, Stage } from "./types";
 
 export type InsertProjectNoteResult =
   | { id: string }
@@ -8,7 +8,7 @@ export type InsertProjectNoteResult =
 export async function insertProjectNote(
   projectId: string,
   content: string,
-  stage: NoteStage,
+  stage: Stage,
   client: ProjectsSupabaseClient = supabase as unknown as ProjectsSupabaseClient,
 ): Promise<DataResult<InsertProjectNoteResult>> {
   const trimmed = content.trim();

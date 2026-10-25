@@ -18,11 +18,11 @@ import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {
   getProjectById,
-  type NoteStage,
   type ProjectDetail,
+  type Stage,
 } from "../../../../lib/projects";
 
-const STAGE_LABELS: Record<NoteStage, string> = {
+const STAGE_LABELS: Record<Stage, string> = {
   planning: "Planning",
   in_progress: "In Progress",
   completed: "Completed",

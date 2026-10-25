@@ -1,27 +1,27 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import {
-  photoTypeOptionsForStatus,
+  photoTypeOptionsForStage,
   type ProjectPhotoType,
 } from "@/components/add-project/photo-type";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import type { ProjectStatus } from "../../../lib/projects";
+import type { Stage } from "../../../lib/projects";
 
 type PhotoTypeToggleProps = {
-  status: ProjectStatus;
+  stage: Stage;
   value: ProjectPhotoType;
   onChange: (value: ProjectPhotoType) => void;
 };
 
 export function PhotoTypeToggle({
-  status,
+  stage,
   value,
   onChange,
 }: PhotoTypeToggleProps) {
   const theme = useTheme();
-  const options = photoTypeOptionsForStatus(status);
+  const options = photoTypeOptionsForStage(stage);
 
   if (options.length === 0) {
     return null;

@@ -25,7 +25,7 @@ import {
   getProjectsByStatus,
   updateProject,
   type ProjectListItem,
-  type ProjectStatus,
+  type Stage,
 } from "../../../lib/projects";
 
 type StatusPageProps = {
@@ -38,14 +38,14 @@ type StatusPageProps = {
   onProjectsChanged?: () => void;
 };
 
-const CATEGORY_TO_STATUS: Record<ProjectCategory, ProjectStatus> = {
+const CATEGORY_TO_STAGE: Record<ProjectCategory, Stage> = {
   planning: "planning",
   inProgress: "in_progress",
   completed: "completed",
 };
 
-/** Status to pull candidates from when promoting into this category. */
-const PREVIOUS_STATUS: Partial<Record<ProjectCategory, ProjectStatus>> = {
+/** Stage to pull candidates from when promoting into this category. */
+const PREVIOUS_STAGE: Partial<Record<ProjectCategory, Stage>> = {
   inProgress: "planning",
   completed: "in_progress",
 };
@@ -74,14 +74,14 @@ export function StatusPage({
   const [error, setError] = useState<string | null>(null);
   const [moving, setMoving] = useState(false);
 
-  const status = CATEGORY_TO_STATUS[category];
-  const previousStatus = PREVIOUS_STATUS[category];
+  const stage = CATEGORY_TO_STAGE[category];
+  const previousStage = PREVIOUS_STAGE[category];
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    const result = await getProjectsByStatus(status);
+    const result = await getProjectsByStatus(stage);
 
     if (result.error) {
       setProjects([]);
@@ -92,7 +92,7 @@ export function StatusPage({
 
     setProjects(result.data ?? []);
     setLoading(false);
-  }, [status]);
+  }, [stage]);
 
   useFocusEffect(
     useCallback(() => {
@@ -108,7 +108,7 @@ export function StatusPage({
   }, [listVersion, loadProjects]);
 
   useEffect(() => {
-    if (!modalVisible || !previousStatus) {
+    if (!modalVisible || !previousStage) {
       setMovableProjects([]);
       return;
     }
@@ -116,7 +116,7 @@ export function StatusPage({
     let active = true;
 
     async function loadMovable() {
-      const result = await getProjectsByStatus(previousStatus!);
+      const result = await getProjectsByStatus(previousStage!);
       if (!active) {
         return;
       }
@@ -139,13 +139,13 @@ export function StatusPage({
     return () => {
       active = false;
     };
-  }, [modalVisible, previousStatus]);
+  }, [modalVisible, previousStage]);
 
   const openAddProject = () => {
     setModalVisible(false);
     router.push({
       pathname: "/add-project",
-      params: { status },
+      params: { status: stage },
     });
   };
 
@@ -155,7 +155,7 @@ export function StatusPage({
     }
 
     setMoving(true);
-    const result = await updateProject(project.id, { status });
+    const result = await updateProject(project.id, { status: stage });
     setMoving(false);
 
     if (result.error) {

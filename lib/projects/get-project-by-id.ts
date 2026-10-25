@@ -3,10 +3,10 @@ import { pickProjectPhotoUrl } from "./get-projects-by-status";
 import type {
   DataResult,
   HobbyType,
-  NoteStage,
   PhotoType,
   ProjectStatus,
   ProjectsSupabaseClient,
+  Stage,
 } from "./types";
 
 export type ProjectDetailPhoto = {
@@ -28,7 +28,7 @@ export type ProjectDetailMaterial = {
 
 export type ProjectDetailNote = {
   id: string;
-  stage: NoteStage;
+  stage: Stage;
   content: string;
   createdAt: string;
 };
@@ -65,7 +65,7 @@ type DetailMaterialRow = {
 
 type DetailNoteRow = {
   id: string;
-  stage: NoteStage;
+  stage: Stage;
   content: string;
   created_at: string;
 };
