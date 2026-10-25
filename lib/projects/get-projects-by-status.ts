@@ -13,7 +13,9 @@ export type ProjectListItem = {
   status: ProjectStatus;
   photoUrl: string | null;
   hasPattern: boolean;
+  hasMaterial: boolean;
   materialName: string | null;
+  createdAt: string;
 };
 
 type NestedPhoto = {
@@ -101,7 +103,9 @@ export function mapProjectListRow(row: ProjectListRow): ProjectListItem {
     status: row.status,
     photoUrl: pickProjectPhotoUrl(row.project_photos),
     hasPattern: Boolean(row.pattern_file_url),
+    hasMaterial: Boolean(row.project_materials?.length),
     materialName: pickMaterialName(row.project_materials),
+    createdAt: row.created_at,
   };
 }
 

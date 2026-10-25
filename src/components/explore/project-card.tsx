@@ -7,10 +7,10 @@ import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import type { HobbyType, ProjectListItem } from "../../../lib/projects";
 
-const HOBBY_LABELS: Record<HobbyType, string> = {
-  crochet: "Crochet",
-  knit: "Knit",
-  sewing: "Sewing",
+const HOBBY_ICONS: Record<HobbyType, number> = {
+  crochet: require("@/assets/images/icons/crocheting.png"),
+  knit: require("@/assets/images/icons/knitting.png"),
+  sewing: require("@/assets/images/icons/sewing-machine.png"),
 };
 
 type ProjectCardProps = {
@@ -18,11 +18,38 @@ type ProjectCardProps = {
   onPress: () => void;
 };
 
+function formatCreatedAt(createdAt: string): string {
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) {
+    return createdAt;
+  }
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function PresenceLabel({ label, active }: { label: string; active: boolean }) {
+  const theme = useTheme();
+
+  if (active) {
+    return (
+      <View style={[styles.chip, { backgroundColor: theme.border }]}>
+        <ThemedText type="small">{label}</ThemedText>
+      </View>
+    );
+  }
+
+  return (
+    <ThemedText type="small" themeColor="textSecondary">
+      {label}
+    </ThemedText>
+  );
+}
+
 export function ProjectCard({ project, onPress }: ProjectCardProps) {
   const theme = useTheme();
-  const hobbyLabel = project.hobbyType
-    ? HOBBY_LABELS[project.hobbyType]
-    : null;
+  const hobbyIcon = project.hobbyType ? HOBBY_ICONS[project.hobbyType] : null;
 
   return (
     <Pressable
@@ -35,12 +62,7 @@ export function ProjectCard({ project, onPress }: ProjectCardProps) {
         pressed && styles.pressed,
       ]}
     >
-      <View
-        style={[
-          styles.imageWrap,
-          { backgroundColor: theme.border },
-        ]}
-      >
+      <View style={[styles.imageWrap, { backgroundColor: theme.border }]}>
         {project.photoUrl ? (
           <Image
             source={{ uri: project.photoUrl }}
@@ -65,27 +87,23 @@ export function ProjectCard({ project, onPress }: ProjectCardProps) {
         <ThemedText type="smallBold" numberOfLines={2}>
           {project.title}
         </ThemedText>
-        {hobbyLabel ? (
-          <ThemedText themeColor="textSecondary" type="small">
-            {hobbyLabel}
-          </ThemedText>
-        ) : null}
-        {project.hasPattern ? (
-          <View
-            style={[
-              styles.badge,
-              { backgroundColor: theme.border },
-            ]}
-          >
-            <ThemedText type="small">Pattern</ThemedText>
-          </View>
-        ) : null}
-        {project.materialName ? (
-          <ThemedText themeColor="textSecondary" type="small" numberOfLines={1}>
-            {project.materialName}
-          </ThemedText>
-        ) : null}
+
+        <PresenceLabel label="Pattern" active={project.hasPattern} />
+        <PresenceLabel label="Material" active={project.hasMaterial} />
+
+        <ThemedText type="small">
+          Created at: {formatCreatedAt(project.createdAt)}
+        </ThemedText>
       </View>
+
+      {hobbyIcon ? (
+        <Image
+          source={hobbyIcon}
+          style={styles.hobbyIcon}
+          contentFit="contain"
+          accessibilityLabel={`${project.hobbyType} project`}
+        />
+      ) : null}
     </Pressable>
   );
 }
@@ -93,18 +111,19 @@ export function ProjectCard({ project, onPress }: ProjectCardProps) {
 const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: Spacing.three,
     borderRadius: Spacing.two,
     padding: Spacing.two,
   },
   imageWrap: {
-    width: 72,
-    height: 72,
+    width: 88,
+    height: 80,
     borderRadius: Spacing.two,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    alignSelf: "center",
   },
   image: {
     width: "100%",
@@ -113,8 +132,13 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     gap: Spacing.half,
+    minWidth: 0,
   },
-  badge: {
+  hobbyIcon: {
+    width: 28,
+    height: 28,
+  },
+  chip: {
     alignSelf: "flex-start",
     borderRadius: Spacing.one,
     paddingHorizontal: Spacing.two,

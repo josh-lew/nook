@@ -127,7 +127,9 @@ describe("mapProjectListRow", () => {
       status: "planning",
       photoUrl: "https://example.com/new.jpg",
       hasPattern: true,
+      hasMaterial: true,
       materialName: "Chosen yarn",
+      createdAt: "2026-01-02T00:00:00Z",
     });
   });
 
@@ -171,7 +173,9 @@ describe("getProjectsByStatus", () => {
         status: "planning",
         photoUrl: "https://example.com/new.jpg",
         hasPattern: true,
+        hasMaterial: true,
         materialName: "Chosen yarn",
+        createdAt: "2026-01-02T00:00:00Z",
       },
     ]);
   });
