@@ -17,6 +17,12 @@ export type InsertProjectInput = {
   pattern_file_url?: string | null;
 };
 
+export type InsertIdeaInput = {
+  title: string;
+  hobby_type: HobbyType;
+  description?: string | null;
+};
+
 export type InsertProjectMaterialInput = {
   name?: string | null;
   url?: string | null;
@@ -30,6 +36,7 @@ export type UpdateProjectInput = {
   title?: string;
   hobby_type?: HobbyType;
   status?: Stage;
+  description?: string | null;
 };
 
 export type PhotoType = "inspiration" | "material" | "progress" | "finished";

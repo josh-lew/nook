@@ -180,6 +180,27 @@ describe("getProjectsByStatus", () => {
     ]);
   });
 
+  it("only asks for Projects in the Stage, so Ideas never appear", async () => {
+    const client = createMockProjectsClient({});
+
+    await getProjectsByStatus("planning", client);
+
+    expect(client.calls).toEqual([
+      expect.objectContaining({
+        table: "projects",
+        kind: "select",
+        filters: expect.arrayContaining([
+          { method: "eq", column: "status", value: "planning" },
+        ]),
+      }),
+    ]);
+    expect(client.calls[0]).not.toMatchObject({
+      filters: expect.arrayContaining([
+        { method: "eq", column: "status", value: "idea" },
+      ]),
+    });
+  });
+
   it("returns an error when the user is not signed in", async () => {
     const client = createMockProjectsClient({ user: null });
 

@@ -36,7 +36,7 @@ export type ProjectDetailNote = {
 export type ProjectDetail = {
   id: string;
   title: string;
-  hobbyType: HobbyType | null;
+  hobbyType: HobbyType;
   status: ProjectStatus;
   patternFileUrl: string | null;
   primaryPhotoUrl: string | null;
@@ -73,7 +73,7 @@ type DetailNoteRow = {
 export type ProjectDetailRow = {
   id: string;
   title: string;
-  hobby_type: HobbyType | null;
+  hobby_type: HobbyType;
   status: ProjectStatus;
   pattern_file_url: string | null;
   project_photos: DetailPhotoRow[] | null;

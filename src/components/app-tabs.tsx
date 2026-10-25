@@ -26,6 +26,14 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger
+        name="ideas"
+        contentStyle={{ backgroundColor: colors.background }}
+      >
+        <NativeTabs.Trigger.Label>Ideas</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="lightbulb" md="lightbulb" />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
         name="explore"
         contentStyle={{ backgroundColor: colors.background }}
       >

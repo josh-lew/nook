@@ -13,6 +13,14 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="capture-idea"
+        options={{
+          presentation: "modal",
+          headerShown: false,
+          title: "New Idea",
+        }}
+      />
+      <Stack.Screen
         name="project/[id]"
         options={{
           title: "Project",
