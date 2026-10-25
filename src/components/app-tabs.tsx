@@ -7,11 +7,15 @@ export default function AppTabs() {
 
   return (
     <NativeTabs
-      backgroundColor={colors.background}
+      backgroundColor={colors.surface}
       blurEffect="none"
       disableTransparentOnScrollEdge
-      indicatorColor={colors.surface}
-      labelStyle={{ selected: { color: colors.primary } }}
+      iconColor={{ default: colors.textSecondary, selected: colors.primary }}
+      indicatorColor={colors.background}
+      labelStyle={{
+        default: { color: colors.textSecondary },
+        selected: { color: colors.primary },
+      }}
       shadowColor="transparent"
     >
       <NativeTabs.Trigger

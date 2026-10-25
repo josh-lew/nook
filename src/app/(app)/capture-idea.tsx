@@ -361,9 +361,9 @@ export default function CaptureIdeaScreen() {
           ]}
         >
           {saving ? (
-            <ActivityIndicator color={theme.textPrimary} />
+            <ActivityIndicator color={theme.onPrimary} />
           ) : (
-            <ThemedText>Save</ThemedText>
+            <ThemedText style={{ color: theme.onPrimary }}>Save</ThemedText>
           )}
         </Pressable>
       </View>
