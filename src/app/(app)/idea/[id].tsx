@@ -75,7 +75,8 @@ export default function IdeaScreen() {
       }
 
       const result = await getProjectById(ideaId);
-      if (result.error || !result.data) {
+      // Ideas share the projects table, so a Project id must not open here
+      if (result.error || result.data?.status !== "idea") {
         setIdea(null);
         setLoadError(result.error ?? "Idea not found.");
         setLoading(false);

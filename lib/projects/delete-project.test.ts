@@ -6,11 +6,15 @@ jest.mock("../supabase", () => ({
 }));
 
 describe("deleteProject", () => {
-  it("soft-deletes by stamping deleted_at rather than removing the row", async () => {
-    const client = createMockProjectsClient({});
-    const now = new Date("2026-10-25T12:00:00.000Z");
+  afterEach(() => {
+    jest.useRealTimers();
+  });
 
-    const result = await deleteProject("idea-1", client, () => now);
+  it("soft-deletes by stamping deleted_at rather than removing the row", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-10-25T12:00:00.000Z"));
+    const client = createMockProjectsClient({});
+
+    const result = await deleteProject("idea-1", client);
 
     expect(result).toEqual({ data: null, error: null });
     expect(client.calls).toEqual([

@@ -5,11 +5,10 @@ import type { DataResult, ProjectsSupabaseClient } from "./types";
 export async function deleteProject(
   projectId: string,
   client: ProjectsSupabaseClient = supabase as unknown as ProjectsSupabaseClient,
-  now: () => Date = () => new Date(),
 ): Promise<DataResult<null>> {
   const { error } = await client
     .from("projects")
-    .update({ deleted_at: now().toISOString() })
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", projectId);
 
   if (error) {
