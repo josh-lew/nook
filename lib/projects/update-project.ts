@@ -10,9 +10,27 @@ export async function updateProject(
   input: UpdateProjectInput,
   client: ProjectsSupabaseClient = supabase as unknown as ProjectsSupabaseClient,
 ): Promise<DataResult<{ id: string }>> {
+  const values: UpdateProjectInput = { ...input };
+
+  if (input.title !== undefined) {
+    values.title = input.title.trim();
+    if (!values.title) {
+      return { data: null, error: "A title can't be blank." };
+    }
+  }
+
+  // A hobby can be changed but never cleared
+  if ("hobby_type" in input && !input.hobby_type) {
+    return { data: null, error: "A hobby can't be cleared." };
+  }
+
+  if (input.description !== undefined) {
+    values.description = input.description?.trim() || null;
+  }
+
   const { data, error } = await client
     .from("projects")
-    .update(input)
+    .update(values)
     .eq("id", projectId)
     .select("id")
     .single();

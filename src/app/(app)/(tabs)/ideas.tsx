@@ -1,4 +1,4 @@
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { getIdeas, type IdeaListItem } from "../../../../lib/projects";
 
 export default function IdeasScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const [ideas, setIdeas] = useState<IdeaListItem[]>([]);
@@ -99,7 +100,16 @@ export default function IdeasScreen() {
         {!loading && !error && ideas.length > 0 ? (
           <View style={styles.list}>
             {ideas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} />
+              <IdeaCard
+                key={idea.id}
+                idea={idea}
+                onPress={() => {
+                  router.push({
+                    pathname: "/idea/[id]",
+                    params: { id: idea.id },
+                  });
+                }}
+              />
             ))}
           </View>
         ) : null}

@@ -38,6 +38,7 @@ export type ProjectDetail = {
   title: string;
   hobbyType: HobbyType;
   status: ProjectStatus;
+  description: string | null;
   patternFileUrl: string | null;
   primaryPhotoUrl: string | null;
   photos: ProjectDetailPhoto[];
@@ -75,6 +76,7 @@ export type ProjectDetailRow = {
   title: string;
   hobby_type: HobbyType;
   status: ProjectStatus;
+  description: string | null;
   pattern_file_url: string | null;
   project_photos: DetailPhotoRow[] | null;
   project_materials: DetailMaterialRow[] | null;
@@ -102,6 +104,7 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
     title: row.title,
     hobbyType: row.hobby_type,
     status: row.status,
+    description: row.description,
     patternFileUrl: row.pattern_file_url,
     primaryPhotoUrl: pickProjectPhotoUrl(photoRows),
     photos: photoRows.map((photo) => ({
@@ -153,6 +156,7 @@ export async function getProjectById(
       title,
       hobby_type,
       status,
+      description,
       pattern_file_url,
       project_photos ( id, image_url, photo_type, is_primary, created_at ),
       project_materials ( id, name, url, photo_url, comment, is_selected, created_at ),

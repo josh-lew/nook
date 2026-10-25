@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
@@ -9,15 +9,22 @@ import type { IdeaListItem } from "../../../lib/projects";
 
 type IdeaCardProps = {
   idea: IdeaListItem;
+  onPress: () => void;
 };
 
-export function IdeaCard({ idea }: IdeaCardProps) {
+export function IdeaCard({ idea, onPress }: IdeaCardProps) {
   const theme = useTheme();
 
   return (
-    <View
+    <Pressable
+      accessibilityRole="button"
       accessibilityLabel={`${idea.title} idea`}
-      style={[styles.card, { backgroundColor: theme.surface }]}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: theme.surface },
+        pressed && styles.pressed,
+      ]}
     >
       <View style={[styles.imageWrap, { backgroundColor: theme.border }]}>
         {idea.photoUrl ? (
@@ -39,7 +46,7 @@ export function IdeaCard({ idea }: IdeaCardProps) {
       <ThemedText type="smallBold" numberOfLines={2} style={styles.title}>
         {idea.title}
       </ThemedText>
-    </View>
+    </Pressable>
   );
 }
 
@@ -65,5 +72,8 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

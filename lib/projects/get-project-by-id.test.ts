@@ -14,6 +14,7 @@ const sampleRow: ProjectDetailRow = {
   title: "Scarf",
   hobby_type: "knit",
   status: "in_progress",
+  description: "Stripy, for winter",
   pattern_file_url: "https://example.com/pattern.pdf",
   project_photos: [
     {
@@ -76,6 +77,7 @@ describe("mapProjectDetailRow", () => {
       title: "Scarf",
       hobbyType: "knit",
       status: "in_progress",
+      description: "Stripy, for winter",
       patternFileUrl: "https://example.com/pattern.pdf",
       primaryPhotoUrl: "https://example.com/old.jpg",
     });
@@ -120,6 +122,7 @@ describe("mapProjectDetailRow", () => {
   it("handles empty relations", () => {
     const detail = mapProjectDetailRow({
       ...sampleRow,
+      description: null,
       pattern_file_url: null,
       project_photos: [],
       project_materials: null,
@@ -127,6 +130,7 @@ describe("mapProjectDetailRow", () => {
     });
 
     expect(detail.primaryPhotoUrl).toBeNull();
+    expect(detail.description).toBeNull();
     expect(detail.patternFileUrl).toBeNull();
     expect(detail.photos).toEqual([]);
     expect(detail.materials).toEqual([]);
