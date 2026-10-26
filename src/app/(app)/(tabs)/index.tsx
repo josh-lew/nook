@@ -1,7 +1,7 @@
-import { useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet } from "react-native";
 
+import { CaptureIdeaFab } from "@/components/ideas/capture-idea-fab";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
@@ -10,7 +10,6 @@ import { useTheme } from "@/hooks/use-theme";
 
 export default function Index() {
   const theme = useTheme();
-  const router = useRouter();
   const { colorScheme, setPreference } = useThemePreference();
   const isDark = colorScheme === "dark";
 
@@ -48,22 +47,7 @@ export default function Index() {
         </ThemedText>
       </Pressable>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Capture an idea"
-        onPress={() => router.push("/capture-idea")}
-        style={({ pressed }) => [
-          styles.fab,
-          { backgroundColor: theme.primary, bottom: Spacing.four, right: Spacing.five },
-          pressed && styles.pressed,
-        ]}
-      >
-        <SymbolView
-          name={{ ios: "plus", android: "add", web: "add" }}
-          size={26}
-          tintColor={theme.onPrimary}
-        />
-      </Pressable>
+      <CaptureIdeaFab />
     </ThemedView>
   );
 }
@@ -84,19 +68,6 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-  },
-  fab: {
-    position: "absolute",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
   },
   pressed: {
     opacity: 0.7,

@@ -130,8 +130,7 @@ export default function IdeaScreen() {
       return;
     }
 
-    await load(true);
-    setSaving(false);
+    router.back();
   };
 
   const addPhotos = async () => {
