@@ -335,7 +335,7 @@ export default function IdeaScreen() {
             <ActivityIndicator color={theme.onPrimary} />
           ) : (
             <ThemedText style={{ color: theme.onPrimary }}>
-              {dirty ? "Save changes" : "Saved"}
+              Save changes
             </ThemedText>
           )}
         </Pressable>

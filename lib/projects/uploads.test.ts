@@ -177,7 +177,7 @@ describe("uploadPatternFile", () => {
     });
     expect(uploaded).toEqual({
       bucket: "pattern-files",
-      path: "user-1/project-1/My Pattern.pdf",
+      path: expect.stringMatching(/^user-1\/project-1\/[a-z0-9]+-My Pattern\.pdf$/),
       contentType: "application/pdf",
     });
   });
@@ -252,7 +252,28 @@ describe("uploadProjectPhoto", () => {
     });
     expect(uploaded).toEqual({
       bucket: "project-photos",
-      path: "user-1/project-2/a.jpg",
+      path: expect.stringMatching(/^user-1\/project-2\/[a-z0-9]+-a\.jpg$/),
     });
+  });
+
+  it("gives every upload its own path, so same-named photos never overwrite each other", async () => {
+    const paths: string[] = [];
+    const client = createMockUploadsClient({
+      onUpload: (_bucket, path) => {
+        paths.push(path);
+      },
+    });
+    const photo = {
+      uri: "content://media/image/1",
+      name: "IMG_0001.jpg",
+      type: "image/jpeg",
+      base64: Buffer.from("img").toString("base64"),
+    };
+
+    await uploadProjectPhoto("project-2", photo, client);
+    await uploadProjectPhoto("project-2", photo, client);
+
+    expect(paths).toHaveLength(2);
+    expect(paths[0]).not.toBe(paths[1]);
   });
 });

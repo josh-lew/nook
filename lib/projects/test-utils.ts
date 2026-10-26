@@ -1,6 +1,7 @@
 import type {
   ProjectsDeleteBuilder,
   ProjectsQueryBuilder,
+  ProjectsStorageClient,
   ProjectsSupabaseClient,
   ProjectsUpdateBuilder,
 } from "./types";
@@ -30,13 +31,15 @@ export type MockCall =
   | { table: string; kind: "insert"; values: unknown }
   | { table: string; kind: "select"; columns?: string; filters: MockFilter[] }
   | { table: string; kind: "update"; values: unknown; filters: MockFilter[] }
-  | { table: string; kind: "delete"; filters: MockFilter[] };
+  | { table: string; kind: "delete"; filters: MockFilter[] }
+  | { bucket: string; kind: "remove"; paths: string[] };
 
-type FilteredCall = Exclude<MockCall, { kind: "insert" }>;
+type FilteredCall = Extract<MockCall, { filters: MockFilter[] }>;
 
 type OnUpdate = (values: unknown, column: string, value: unknown) => void;
 
-export type MockProjectsClient = ProjectsSupabaseClient & {
+export type MockProjectsClient = ProjectsSupabaseClient &
+  ProjectsStorageClient & {
   /** Every recorded call, in order, so tests can assert on what was written. */
   calls: MockCall[];
 };
@@ -98,6 +101,7 @@ function createDeleteBuilder(
 ): ProjectsDeleteBuilder {
   const builder: ProjectsDeleteBuilder = {
     ...createFilterMethods(call, () => builder),
+    select: () => Promise.resolve(result),
     then: (onFulfilled, onRejected) =>
       Promise.resolve(result).then(onFulfilled, onRejected),
   };
@@ -142,6 +146,8 @@ export function createMockProjectsClient(options: {
   /** Return a different result for each successive update call. */
   updateResults?: UpdateResult[];
   deleteResult?: UpdateResult;
+  /** Result of `storage.from(bucket).remove(paths)`. */
+  removeResult?: UpdateResult;
   queryResult?: QueryResult;
   /** Return a different result for each successive select call. */
   queryResults?: QueryResult[];
@@ -167,6 +173,14 @@ export function createMockProjectsClient(options: {
           user: options.user === undefined ? { id: "user-1" } : options.user,
         },
         error: options.userError ?? null,
+      }),
+    },
+    storage: {
+      from: (bucket: string) => ({
+        remove: async (paths: string[]) => {
+          calls.push({ bucket, kind: "remove", paths });
+          return options.removeResult ?? { data: null, error: null };
+        },
       }),
     },
     from: (table: string) => ({

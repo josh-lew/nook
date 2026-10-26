@@ -10,6 +10,7 @@ export type {
   ProjectStatus,
   ProjectsDeleteBuilder,
   ProjectsQueryBuilder,
+  ProjectsStorageClient,
   ProjectsSupabaseClient,
   ProjectsUpdateBuilder,
   Stage,
