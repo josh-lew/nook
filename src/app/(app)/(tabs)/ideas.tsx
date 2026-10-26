@@ -1,4 +1,4 @@
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -9,6 +9,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import {
+  CAPTURE_IDEA_FAB_SIZE,
+  CaptureIdeaFab,
+} from "@/components/ideas/capture-idea-fab";
 import { IdeaCard } from "@/components/ideas/idea-card";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -17,6 +21,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { getIdeas, type IdeaListItem } from "../../../../lib/projects";
 
 export default function IdeasScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const [ideas, setIdeas] = useState<IdeaListItem[]>([]);
@@ -51,7 +56,11 @@ export default function IdeasScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: BottomTabInset + Spacing.four },
+          // Leave room so the last card can scroll clear of the button
+          {
+            paddingBottom:
+              BottomTabInset + CAPTURE_IDEA_FAB_SIZE + Spacing.five,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -91,7 +100,7 @@ export default function IdeasScreen() {
         {!loading && !error && ideas.length === 0 ? (
           <View style={styles.state}>
             <ThemedText themeColor="textSecondary" style={styles.stateText}>
-              No ideas yet — tap + on Home to capture one
+              No ideas yet — tap + to capture one
             </ThemedText>
           </View>
         ) : null}
@@ -99,11 +108,22 @@ export default function IdeasScreen() {
         {!loading && !error && ideas.length > 0 ? (
           <View style={styles.list}>
             {ideas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} />
+              <IdeaCard
+                key={idea.id}
+                idea={idea}
+                onPress={() => {
+                  router.push({
+                    pathname: "/idea/[id]",
+                    params: { id: idea.id },
+                  });
+                }}
+              />
             ))}
           </View>
         ) : null}
       </ScrollView>
+
+      <CaptureIdeaFab />
     </ThemedView>
   );
 }

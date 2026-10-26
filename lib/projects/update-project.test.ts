@@ -30,6 +30,66 @@ describe("updateProject", () => {
     expect(eqArgs).toEqual(["id", "project-1"]);
   });
 
+  it("saves an edited title, hobby and description, trimmed", async () => {
+    const client = createMockProjectsClient({
+      insertResult: { data: { id: "idea-1" }, error: null },
+    });
+
+    const result = await updateProject(
+      "idea-1",
+      {
+        title: "  Granny square tote ",
+        hobby_type: "knit",
+        description: "  Chunkier yarn  ",
+      },
+      client,
+    );
+
+    expect(result).toEqual({ data: { id: "idea-1" }, error: null });
+    expect(client.calls).toEqual([
+      {
+        table: "projects",
+        kind: "update",
+        values: {
+          title: "Granny square tote",
+          hobby_type: "knit",
+          description: "Chunkier yarn",
+        },
+        filters: [{ method: "eq", column: "id", value: "idea-1" }],
+      },
+    ]);
+  });
+
+  it("clears a blank description", async () => {
+    const client = createMockProjectsClient({});
+
+    await updateProject("idea-1", { description: "   " }, client);
+
+    expect(client.calls[0]).toMatchObject({ values: { description: null } });
+  });
+
+  it("refuses to blank the title", async () => {
+    const client = createMockProjectsClient({});
+
+    const result = await updateProject("idea-1", { title: "   " }, client);
+
+    expect(result).toEqual({ data: null, error: "A title can't be blank." });
+    expect(client.calls).toEqual([]);
+  });
+
+  it("refuses to clear the hobby", async () => {
+    const client = createMockProjectsClient({});
+
+    const result = await updateProject(
+      "idea-1",
+      { hobby_type: null as never },
+      client,
+    );
+
+    expect(result).toEqual({ data: null, error: "A hobby can't be cleared." });
+    expect(client.calls).toEqual([]);
+  });
+
   it("returns a Supabase error message on failure", async () => {
     const client = createMockProjectsClient({
       insertResult: { data: null, error: { message: "not found" } },

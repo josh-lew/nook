@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { HobbyPicker } from "@/components/ideas/hobby-picker";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
@@ -24,12 +25,6 @@ import {
   type HobbyType,
   type UploadFile,
 } from "../../../lib/projects";
-
-const HOBBY_OPTIONS: { value: HobbyType; label: string }[] = [
-  { value: "crochet", label: "Crochet" },
-  { value: "knit", label: "Knit" },
-  { value: "sewing", label: "Sewing" },
-];
 
 type PhotoDraft = {
   id: string;
@@ -203,47 +198,15 @@ export default function CaptureIdeaScreen() {
           ) : null}
         </View>
 
-        <View style={styles.field}>
-          <ThemedText type="small" themeColor="textSecondary">
-            Hobby
-          </ThemedText>
-          <View accessibilityRole="radiogroup" style={styles.chips}>
-            {HOBBY_OPTIONS.map((option) => {
-              const selected = hobbyType === option.value;
-              return (
-                <Pressable
-                  key={option.value}
-                  accessibilityRole="radio"
-                  accessibilityLabel={option.label}
-                  accessibilityState={{ checked: selected }}
-                  disabled={saving || ideaSaved}
-                  onPress={() => {
-                    setHobbyType(option.value);
-                    setHobbyError(null);
-                  }}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: selected ? theme.border : theme.surface,
-                      borderColor: selected
-                        ? theme.primary
-                        : hobbyError
-                          ? theme.error
-                          : theme.border,
-                    },
-                  ]}
-                >
-                  <ThemedText type="small">{option.label}</ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
-          {hobbyError ? (
-            <ThemedText type="small" style={{ color: theme.error }}>
-              {hobbyError}
-            </ThemedText>
-          ) : null}
-        </View>
+        <HobbyPicker
+          value={hobbyType}
+          disabled={saving || ideaSaved}
+          error={hobbyError}
+          onChange={(hobby) => {
+            setHobbyType(hobby);
+            setHobbyError(null);
+          }}
+        />
 
         <View style={styles.field}>
           <ThemedText type="small" themeColor="textSecondary">
@@ -400,17 +363,6 @@ const styles = StyleSheet.create({
   multiline: {
     minHeight: 96,
     textAlignVertical: "top",
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.two,
-  },
-  chip: {
-    borderWidth: 1,
-    borderRadius: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
   },
   photos: {
     flexDirection: "row",

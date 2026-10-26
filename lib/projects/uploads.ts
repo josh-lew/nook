@@ -128,7 +128,10 @@ async function uploadToBucket(
     return { data: null, error: "You must be signed in to upload a file." };
   }
 
-  const path = `${user.id}/${projectId}/${sanitizeFilename(file.name)}`;
+  // A unique prefix stops same-named files overwriting each other, so deleting
+  // one row's file can never break another row that shared the path
+  const uniquePrefix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  const path = `${user.id}/${projectId}/${uniquePrefix}-${sanitizeFilename(file.name)}`;
   const contentType = resolveContentType(file);
 
   const bodyResult = await readFileAsArrayBuffer(file);

@@ -86,6 +86,11 @@ export type ProjectsDeleteBuilder = {
     column: string,
     values: readonly (string | number)[],
   ) => ProjectsDeleteBuilder;
+  /** Returns the deleted rows, so callers can tell a delete that matched nothing. */
+  select: (columns?: string) => PromiseLike<{
+    data: unknown;
+    error: { message: string } | null;
+  }>;
 } & PromiseLike<{
   data: unknown;
   error: { message: string } | null;
@@ -113,6 +118,18 @@ export type ProjectsSupabaseClient = {
     update: (values: unknown) => ProjectsUpdateBuilder;
     delete: () => ProjectsDeleteBuilder;
     select: (columns?: string) => ProjectsQueryBuilder;
+  };
+};
+
+/** Storage access for data-layer functions that clean up stored files. */
+export type ProjectsStorageClient = {
+  storage: {
+    from: (bucket: string) => {
+      remove: (paths: string[]) => Promise<{
+        data: unknown;
+        error: { message: string } | null;
+      }>;
+    };
   };
 };
 

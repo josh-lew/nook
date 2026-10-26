@@ -21,6 +21,12 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="idea/[id]"
+        options={{
+          title: "Idea",
+        }}
+      />
+      <Stack.Screen
         name="project/[id]"
         options={{
           title: "Project",
