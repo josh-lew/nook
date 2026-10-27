@@ -1,6 +1,6 @@
 import { supabase } from "../supabase";
 import { PROJECT_PHOTOS_BUCKET } from "./buckets";
-import { storagePathFromSignedUrl } from "./storage-path-from-signed-url";
+import { storagePathFromSignedUrl } from "./storage-path";
 import type {
   DataResult,
   ProjectsStorageClient,
@@ -31,8 +31,8 @@ export async function deleteProjectPhoto(
   }
 
   const path = storagePathFromSignedUrl(
-    deleted[0].image_url,
     PROJECT_PHOTOS_BUCKET,
+    deleted[0].image_url,
   );
   if (path) {
     // The photo is already gone from the Idea; a leftover file is only clutter

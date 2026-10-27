@@ -9,7 +9,6 @@ import { SymbolView } from "expo-symbols";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,8 +19,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
+import { MaterialOptions } from "@/components/project/material-options";
 import { PatternOptions } from "@/components/project/pattern-options";
 import { ProjectNotes } from "@/components/project/project-notes";
+import {
+  OpenPatternButton,
+  ProjectPattern,
+} from "@/components/project/project-pattern";
 import { ProjectPhotos } from "@/components/project/project-photos";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -201,41 +205,17 @@ export default function ProjectDetailScreen() {
   }
 
   const stage = project.status;
-  const patternUrl = project.pattern?.url;
 
   const sections: Record<Section, ReactNode> = {
     pattern: (
       <View key="pattern" style={styles.section}>
-        <ThemedText type="smallBold">Pattern</ThemedText>
-        {patternUrl ? (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => {
-              void Linking.openURL(patternUrl);
-            }}
-          >
-            <ThemedText type="linkPrimary">Open pattern</ThemedText>
-          </Pressable>
-        ) : project.pattern ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            The chosen Pattern Option has no link.
-          </ThemedText>
-        ) : (
-          <ThemedText type="small" themeColor="textSecondary">
-            No Pattern yet. Choose one of the Pattern Options below.
-          </ThemedText>
-        )}
-        {/* Uploaded by the old wizard; replaced by Pattern Files */}
-        {project.patternFileUrl ? (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => {
-              void Linking.openURL(project.patternFileUrl!);
-            }}
-          >
-            <ThemedText type="linkPrimary">Open pattern file</ThemedText>
-          </Pressable>
-        ) : null}
+        <ProjectPattern
+          project={project}
+          disabled={busy}
+          onBusyChange={setSectionBusy}
+          onError={setActionError}
+          onChanged={reload}
+        />
         <PatternOptions
           project={project}
           disabled={busy}
@@ -246,51 +226,14 @@ export default function ProjectDetailScreen() {
       </View>
     ),
     materials: (
-      <View key="materials" style={styles.section}>
-        <ThemedText type="smallBold">Materials</ThemedText>
-        {project.materials.length === 0 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            No materials yet.
-          </ThemedText>
-        ) : null}
-        {project.materials.map((material) => (
-          <View
-            key={material.id}
-            style={[styles.materialRow, { backgroundColor: theme.surface }]}
-          >
-            {material.photoUrl ? (
-              <Image
-                source={{ uri: material.photoUrl }}
-                style={styles.materialThumb}
-                contentFit="cover"
-                accessibilityLabel={
-                  material.name ? `${material.name} photo` : "Material photo"
-                }
-              />
-            ) : null}
-            <View style={styles.materialBody}>
-              <ThemedText type="smallBold">
-                {material.name?.trim() || "Untitled material"}
-              </ThemedText>
-              {material.comment?.trim() ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {material.comment.trim()}
-                </ThemedText>
-              ) : null}
-              {material.url?.trim() ? (
-                <Pressable
-                  accessibilityRole="link"
-                  onPress={() => {
-                    void Linking.openURL(material.url!);
-                  }}
-                >
-                  <ThemedText type="linkPrimary">Open link</ThemedText>
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
-        ))}
-      </View>
+      <MaterialOptions
+        key="materials"
+        project={project}
+        disabled={busy}
+        onBusyChange={setSectionBusy}
+        onError={setActionError}
+        onChanged={reload}
+      />
     ),
     photos: (
       <ProjectPhotos
@@ -346,6 +289,10 @@ export default function ProjectDetailScreen() {
         <ThemedText type="small" themeColor="textSecondary">
           {STAGE_LABELS[stage]}
         </ThemedText>
+
+        {stage === "in_progress" && project.pattern ? (
+          <OpenPatternButton pattern={project.pattern} />
+        ) : null}
 
         <View style={styles.field}>
           <ThemedText type="small" themeColor="textSecondary">
@@ -523,21 +470,6 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: Spacing.two,
-  },
-  materialRow: {
-    flexDirection: "row",
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-  },
-  materialThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: Spacing.one,
-  },
-  materialBody: {
-    flex: 1,
-    gap: Spacing.half,
   },
   deleteBtn: {
     alignItems: "center",

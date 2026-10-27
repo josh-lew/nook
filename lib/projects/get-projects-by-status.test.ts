@@ -17,9 +17,9 @@ const sampleRow: ProjectListRow = {
   title: "Scarf",
   hobby_type: "knit",
   status: "planning",
-  pattern_file_url: null,
   created_at: "2026-01-02T00:00:00Z",
   plan_order: null,
+  pattern_files: [{ id: "f1" }],
   project_photos: [
     {
       id: "ph1",
@@ -137,26 +137,34 @@ describe("mapProjectListRow", () => {
     });
   });
 
-  it("has no Pattern while Pattern Options are only being weighed up", () => {
+  it("has a Pattern once an option is chosen or a Pattern File is added", () => {
+    expect(mapProjectListRow(sampleRow).hasPattern).toBe(true);
+    expect(
+      mapProjectListRow({ ...sampleRow, pattern_files: [] }).hasPattern,
+    ).toBe(true);
     expect(
       mapProjectListRow({
         ...sampleRow,
         pattern_options: [{ id: "po1", is_selected: false }],
       }).hasPattern,
-    ).toBe(false);
-    expect(
-      mapProjectListRow({ ...sampleRow, pattern_options: null }).hasPattern,
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it("still counts a pattern file from the old wizard until Pattern Files replace it", () => {
+  it("has no Pattern while Pattern Options are only being weighed up", () => {
     expect(
       mapProjectListRow({
         ...sampleRow,
-        pattern_file_url: "https://example.com/pattern.pdf",
-        pattern_options: [],
+        pattern_options: [{ id: "po1", is_selected: false }],
+        pattern_files: [],
       }).hasPattern,
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      mapProjectListRow({
+        ...sampleRow,
+        pattern_options: null,
+        pattern_files: null,
+      }).hasPattern,
+    ).toBe(false);
   });
 
   it("uses the primary photo when present", () => {

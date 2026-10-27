@@ -38,12 +38,26 @@ export type PatternOptionInput = {
   comment?: string | null;
 };
 
+/** Edits to a Material Option; `is_selected` marks it as chosen. */
+export type UpdateMaterialOptionInput = {
+  url?: string | null;
+  photo_url?: string | null;
+  comment?: string | null;
+  is_selected?: boolean;
+};
+
 export type UpdateProjectInput = {
   pattern_file_url?: string | null;
   title?: string;
   hobby_type?: HobbyType;
   status?: Stage;
   description?: string | null;
+};
+
+export type InsertPatternFileInput = {
+  file_url: string;
+  name: string;
+  content_type: string;
 };
 
 export type PhotoType = "inspiration" | "material" | "progress" | "finished";
