@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { nextRank } from "./next-rank";
 import type {
   DataResult,
   InsertIdeaInput,
@@ -42,11 +43,6 @@ export async function insertIdea(
     return { data: null, error: rankError.message };
   }
 
-  const ranks = ((rankRows ?? []) as { plan_order: number | null }[])
-    .map((row) => row.plan_order)
-    .filter((rank): rank is number => rank !== null);
-  const nextRank = ranks.length > 0 ? Math.max(...ranks) + 1 : 0;
-
   const { data, error } = await client
     .from("projects")
     .insert({
@@ -55,7 +51,7 @@ export async function insertIdea(
       description: input.description?.trim() || null,
       hobby_type: input.hobby_type,
       status: "idea",
-      plan_order: nextRank,
+      plan_order: nextRank(rankRows),
     })
     .select("id")
     .single();

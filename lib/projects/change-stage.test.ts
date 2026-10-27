@@ -25,7 +25,7 @@ describe("changeStage", () => {
     expect(updateCall(client)).toEqual({
       table: "projects",
       kind: "update",
-      values: { status: "in_progress", plan_order: 8, completed_at: null },
+      values: { status: "in_progress", plan_order: 8 },
       filters: [
         { method: "eq", column: "id", value: "project-1" },
         { method: "eq", column: "user_id", value: "user-1" },
@@ -34,7 +34,7 @@ describe("changeStage", () => {
     });
   });
 
-  it("reopens a Completed Project at the bottom of In progress and clears the completion date", async () => {
+  it("reopens a Completed Project at the bottom of In progress", async () => {
     const client = createMockProjectsClient({
       queryResults: [
         { data: { status: "completed" }, error: null },
@@ -48,7 +48,6 @@ describe("changeStage", () => {
     expect(updateCall(client)?.values).toEqual({
       status: "in_progress",
       plan_order: 0,
-      completed_at: null,
     });
     expect(updateCall(client)?.filters).toContainEqual({
       method: "eq",
@@ -166,15 +165,7 @@ describe("changeStage", () => {
   });
 
   describe("completing", () => {
-    beforeEach(() => {
-      jest.useFakeTimers().setSystemTime(new Date("2026-10-27T09:30:00.000Z"));
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it("moves an In progress Project to Completed with the completion date", async () => {
+    it("moves an In progress Project to Completed, leaving the completion date to the database", async () => {
       const client = createMockProjectsClient({
         queryResult: { data: { status: "in_progress" }, error: null },
       });
@@ -185,12 +176,9 @@ describe("changeStage", () => {
       expect(updateCall(client)).toEqual({
         table: "projects",
         kind: "update",
-        // Completed is ordered by completion date, not a manual rank
-        values: {
-          status: "completed",
-          plan_order: null,
-          completed_at: "2026-10-27T09:30:00.000Z",
-        },
+        // Completed is ordered by completion date, not a manual rank; the date
+        // comes from the database clock, so it is never sent from the device
+        values: { status: "completed", plan_order: null },
         filters: [
           { method: "eq", column: "id", value: "project-1" },
           { method: "eq", column: "user_id", value: "user-1" },

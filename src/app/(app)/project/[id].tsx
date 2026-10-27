@@ -87,7 +87,7 @@ export default function ProjectDetailScreen() {
   const [sectionBusy, setSectionBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [moving, setMoving] = useState(false);
-  const [prompt, setPrompt] = useState<StagePromptKind | null>(null);
+  const [stagePrompt, setStagePrompt] = useState<StagePromptKind | null>(null);
 
   const busy = saving || sectionBusy || deleting || moving;
 
@@ -179,7 +179,7 @@ export default function ProjectDetailScreen() {
     } else {
       await reload();
       // The move is already saved, so the prompt only ever adds to it
-      setPrompt(action.prompt);
+      setStagePrompt(action.prompt);
     }
     setMoving(false);
   };
@@ -473,9 +473,9 @@ export default function ProjectDetailScreen() {
       </ScrollView>
 
       <StagePrompt
-        kind={prompt}
+        kind={stagePrompt}
         project={project}
-        onClose={() => setPrompt(null)}
+        onClose={() => setStagePrompt(null)}
         onChanged={reload}
       />
     </ThemedView>

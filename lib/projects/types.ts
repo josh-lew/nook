@@ -53,6 +53,10 @@ export type UpdateProjectInput = {
   pattern_file_url?: string | null;
   title?: string;
   hobby_type?: HobbyType;
+  /**
+   * Only for the new-Project wizard re-saving a Project it just created (until
+   * issue 15 removes it). Move a Project between Stages with `changeStage`.
+   */
   status?: Stage;
   description?: string | null;
 };

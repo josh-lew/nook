@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { nextRank } from "./next-rank";
 import type {
   DataResult,
   ProjectStatus,
@@ -64,7 +65,7 @@ export async function changeStage(
   if (!ALLOWED_MOVES[from].includes(to)) {
     return {
       data: null,
-      error: `Can't move a Project from ${STATUS_NAMES[from]} to ${STATUS_NAMES[to] ?? to}.`,
+      error: `Can't move a Project from ${STATUS_NAMES[from]} to ${STATUS_NAMES[to]}.`,
     };
   }
 
@@ -83,10 +84,7 @@ export async function changeStage(
       return { data: null, error: rankError.message };
     }
 
-    const ranks = ((rankRows ?? []) as { plan_order: number | null }[])
-      .map((rankRow) => rankRow.plan_order)
-      .filter((rank): rank is number => rank !== null);
-    planOrder = ranks.length > 0 ? Math.max(...ranks) + 1 : 0;
+    planOrder = nextRank(rankRows);
   }
 
   const { data: moved, error } = await client
@@ -94,8 +92,7 @@ export async function changeStage(
     .update({
       status: to,
       plan_order: planOrder,
-      // Entering Completed records when; leaving it clears the date
-      completed_at: to === "completed" ? new Date().toISOString() : null,
+      // completed_at is set and cleared by a trigger (12_completed_at.sql) on the database clock
     })
     .eq("id", projectId)
     .eq("user_id", user.id)
