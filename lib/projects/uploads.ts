@@ -2,14 +2,13 @@ import { decode } from "base64-arraybuffer";
 import { File } from "expo-file-system";
 
 import { supabase } from "../supabase";
+import { PATTERN_FILES_BUCKET, PROJECT_PHOTOS_BUCKET } from "./buckets";
 import type {
   DataResult,
   UploadFile,
   UploadsSupabaseClient,
 } from "./types";
 
-const PATTERN_FILES_BUCKET = "pattern-files";
-const PROJECT_PHOTOS_BUCKET = "project-photos";
 /** Private buckets: signed URL TTL (1 year). */
 const SIGNED_URL_EXPIRES_IN = 60 * 60 * 24 * 365;
 

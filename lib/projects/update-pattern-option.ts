@@ -22,7 +22,7 @@ export async function updatePatternOption(
     .update(values.data)
     .eq("id", optionId)
     .select("id")
-    .single();
+    .maybeSingle();
 
   if (error) {
     return { data: null, error: error.message };

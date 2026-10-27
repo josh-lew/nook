@@ -5,6 +5,8 @@ import type {
   ProjectsSupabaseClient,
 } from "./types";
 
+type OptionRow = { id: string; is_selected: boolean | null };
+
 /**
  * Makes a Pattern Option the Project's Pattern, switching from any earlier
  * choice. Passing `null` clears the Pattern.
@@ -18,33 +20,35 @@ export async function choosePatternOption(
     .from("projects")
     .select("status")
     .eq("id", projectId)
-    .single();
+    .maybeSingle();
 
   if (projectError) {
     return { data: null, error: projectError.message };
   }
 
-  // Ideas share the projects table but only weigh up options
   const status = (project as { status: ProjectStatus } | null)?.status;
-  if (!status || status === "idea") {
+  if (!status) {
+    return { data: null, error: "Project not found." };
+  }
+
+  // Ideas share the projects table but only weigh up options
+  if (status === "idea") {
     return { data: null, error: "Only a Project can have a Pattern." };
   }
 
-  if (optionId !== null) {
-    // Check first, so a stale or foreign option can't clear the current Pattern
-    const { data: owned, error: ownedError } = await client
-      .from("pattern_options")
-      .select("id")
-      .eq("id", optionId)
-      .eq("project_id", projectId);
+  const { data: options, error: optionsError } = await client
+    .from("pattern_options")
+    .select("id, is_selected")
+    .eq("project_id", projectId);
 
-    if (ownedError) {
-      return { data: null, error: ownedError.message };
-    }
+  if (optionsError) {
+    return { data: null, error: optionsError.message };
+  }
 
-    if (!(owned as { id: string }[] | null)?.length) {
-      return { data: null, error: "That Pattern Option couldn't be chosen." };
-    }
+  const rows = (options ?? []) as OptionRow[];
+  // Check first, so a stale or foreign option can't clear the current Pattern
+  if (optionId !== null && !rows.some((row) => row.id === optionId)) {
+    return { data: null, error: "That Pattern Option couldn't be chosen." };
   }
 
   // At most one option is selected per project, so clear before selecting
@@ -62,13 +66,21 @@ export async function choosePatternOption(
     return { data: null, error: null };
   }
 
-  const { error: selectError } = await client
-    .from("pattern_options")
-    .update({ is_selected: true })
-    .eq("id", optionId)
-    .eq("project_id", projectId);
+  const select = (id: string) =>
+    client
+      .from("pattern_options")
+      .update({ is_selected: true })
+      .eq("id", id)
+      .eq("project_id", projectId);
+
+  const { error: selectError } = await select(optionId);
 
   if (selectError) {
+    // The two updates aren't atomic: put the earlier Pattern back rather than leave none
+    const previous = rows.find((row) => row.is_selected);
+    if (previous) {
+      await select(previous.id);
+    }
     return { data: null, error: selectError.message };
   }
 

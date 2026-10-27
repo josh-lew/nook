@@ -81,6 +81,11 @@ export type ProjectsUpdateBuilder = {
       data: { id: string } | null;
       error: { message: string } | null;
     }>;
+    /** Like `single`, but no matching row is `data: null` rather than an error. */
+    maybeSingle: () => Promise<{
+      data: { id: string } | null;
+      error: { message: string } | null;
+    }>;
   };
 } & PromiseLike<{
   data: unknown;
@@ -160,6 +165,11 @@ export type ProjectsQueryBuilder = {
     options?: { ascending?: boolean },
   ) => ProjectsQueryBuilder;
   single: () => Promise<{
+    data: unknown;
+    error: { message: string } | null;
+  }>;
+  /** Like `single`, but no matching row is `data: null` rather than an error. */
+  maybeSingle: () => Promise<{
     data: unknown;
     error: { message: string } | null;
   }>;

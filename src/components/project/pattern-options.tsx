@@ -38,9 +38,8 @@ type Draft = {
 };
 
 type PatternOptionsProps = {
+  /** An Idea or a Project; they share a shape (see docs/adr/0001). */
   project: ProjectDetail;
-  /** Only a Project can choose a Pattern; an Idea just collects options. */
-  canChoose: boolean;
   disabled?: boolean;
   onBusyChange: (busy: boolean) => void;
   onError: (message: string | null) => void;
@@ -60,7 +59,6 @@ function draftFrom(option: ProjectDetailPatternOption): Draft {
 /** Candidate patterns (link and/or screenshot), with choosing the Pattern on a Project. */
 export function PatternOptions({
   project,
-  canChoose,
   disabled,
   onBusyChange,
   onError,
@@ -71,6 +69,8 @@ export function PatternOptions({
   const [busy, setBusy] = useState(false);
 
   const locked = disabled || busy;
+  // Only a Project can choose a Pattern; an Idea just collects options
+  const canChoose = project.status !== "idea";
 
   /** Runs a write with the section busy, reports its error, then reloads; success closes the form. */
   const runWrite = async (

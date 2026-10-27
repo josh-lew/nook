@@ -44,6 +44,23 @@ describe("updatePatternOption", () => {
     expect(client.calls).toEqual([]);
   });
 
+  it("reports an option it can't find, e.g. already removed", async () => {
+    const client = createMockProjectsClient({
+      insertResult: { data: null, error: null },
+    });
+
+    const result = await updatePatternOption(
+      "gone",
+      { url: "https://example.com" },
+      client,
+    );
+
+    expect(result).toEqual({
+      data: null,
+      error: "The Pattern Option couldn't be updated.",
+    });
+  });
+
   it("returns a Supabase error message", async () => {
     const client = createMockProjectsClient({
       updateResult: { data: null, error: { message: "update failed" } },

@@ -6,13 +6,19 @@ jest.mock("../supabase", () => ({
 }));
 
 const planningProject = { data: { status: "planning" }, error: null };
-const optionFound = { data: [{ id: "option-2" }], error: null };
-const optionMissing = { data: [], error: null };
+// The Project's options: option-1 is the current Pattern
+const projectOptions = {
+  data: [
+    { id: "option-1", is_selected: true },
+    { id: "option-2", is_selected: false },
+  ],
+  error: null,
+};
 
 describe("choosePatternOption", () => {
   it("selects the option as the Project's Pattern", async () => {
     const client = createMockProjectsClient({
-      queryResults: [planningProject, optionFound],
+      queryResults: [planningProject, projectOptions],
     });
 
     const result = await choosePatternOption("project-1", "option-2", client);
@@ -63,7 +69,7 @@ describe("choosePatternOption", () => {
     // Stand-in for the table: option-1 is the current Pattern
     const selected = new Set(["option-1"]);
     const client = createMockProjectsClient({
-      queryResults: [planningProject, optionFound],
+      queryResults: [planningProject, projectOptions],
       onUpdate: (values, column, value) => {
         const { is_selected } = values as { is_selected: boolean };
         if (column === "is_selected") {
@@ -96,7 +102,7 @@ describe("choosePatternOption", () => {
 
   it("keeps the current Pattern when the option isn't one of the Project's", async () => {
     const client = createMockProjectsClient({
-      queryResults: [planningProject, optionMissing],
+      queryResults: [planningProject, { data: [{ id: "option-1", is_selected: true }], error: null }],
     });
 
     const result = await choosePatternOption("project-1", "other", client);
@@ -108,9 +114,44 @@ describe("choosePatternOption", () => {
     expect(client.calls.some((call) => call.kind === "update")).toBe(false);
   });
 
+  it("reports a Project it can't find, e.g. hidden by RLS", async () => {
+    const client = createMockProjectsClient({
+      queryResult: { data: null, error: null },
+    });
+
+    const result = await choosePatternOption("missing", "option-2", client);
+
+    expect(result).toEqual({ data: null, error: "Project not found." });
+    expect(client.calls.some((call) => call.kind === "update")).toBe(false);
+  });
+
+  it("puts the earlier Pattern back when selecting the new one fails", async () => {
+    const client = createMockProjectsClient({
+      queryResults: [planningProject, projectOptions],
+      updateResults: [
+        { data: null, error: null },
+        { data: null, error: { message: "select failed" } },
+        { data: null, error: null },
+      ],
+    });
+
+    const result = await choosePatternOption("project-1", "option-2", client);
+
+    expect(result).toEqual({ data: null, error: "select failed" });
+    expect(client.calls.at(-1)).toEqual({
+      table: "pattern_options",
+      kind: "update",
+      values: { is_selected: true },
+      filters: [
+        { method: "eq", column: "id", value: "option-1" },
+        { method: "eq", column: "project_id", value: "project-1" },
+      ],
+    });
+  });
+
   it("returns an error when clearing the earlier choice fails", async () => {
     const client = createMockProjectsClient({
-      queryResults: [planningProject, optionFound],
+      queryResults: [planningProject, projectOptions],
       updateResults: [{ data: null, error: { message: "clear failed" } }],
     });
 

@@ -1,13 +1,12 @@
 import { supabase } from "../supabase";
+// Screenshots upload alongside the Idea or Project's own photos
+import { PROJECT_PHOTOS_BUCKET } from "./buckets";
 import { storagePathFromSignedUrl } from "./storage-path-from-signed-url";
 import type {
   DataResult,
   ProjectsStorageClient,
   ProjectsSupabaseClient,
 } from "./types";
-
-// Screenshots upload alongside the Idea or Project's own photos
-const PROJECT_PHOTOS_BUCKET = "project-photos";
 
 type PatternOptionsClient = ProjectsSupabaseClient & ProjectsStorageClient;
 

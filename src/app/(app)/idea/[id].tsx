@@ -394,7 +394,6 @@ export default function IdeaScreen() {
 
         <PatternOptions
           project={idea}
-          canChoose={false}
           disabled={busy}
           onBusyChange={setOptionsBusy}
           onError={setActionError}

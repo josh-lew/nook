@@ -238,7 +238,6 @@ export default function ProjectDetailScreen() {
         ) : null}
         <PatternOptions
           project={project}
-          canChoose
           disabled={busy}
           onBusyChange={setSectionBusy}
           onError={setActionError}
