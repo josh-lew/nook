@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { derivePattern, type Pattern } from "./derive-pattern";
 import { pickProjectPhotoUrl } from "./get-projects-by-status";
 import type {
   DataResult,
@@ -39,7 +40,8 @@ export type ProjectDetail = {
   hobbyType: HobbyType;
   status: ProjectStatus;
   description: string | null;
-  patternFileUrl: string | null;
+  /** Derived from the chosen Pattern Option and the Pattern Files; null when there is none. */
+  pattern: Pattern | null;
   primaryPhotoUrl: string | null;
   photos: ProjectDetailPhoto[];
   materials: ProjectDetailMaterial[];
@@ -64,6 +66,14 @@ type DetailMaterialRow = {
   created_at: string;
 };
 
+type DetailPatternFileRow = {
+  id: string;
+  file_url: string;
+  name: string;
+  content_type: string;
+  created_at: string;
+};
+
 type DetailNoteRow = {
   id: string;
   stage: Stage;
@@ -77,9 +87,9 @@ export type ProjectDetailRow = {
   hobby_type: HobbyType;
   status: ProjectStatus;
   description: string | null;
-  pattern_file_url: string | null;
   project_photos: DetailPhotoRow[] | null;
   project_materials: DetailMaterialRow[] | null;
+  pattern_files: DetailPatternFileRow[] | null;
   project_notes: DetailNoteRow[] | null;
 };
 
@@ -98,6 +108,14 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
   const photoRows = [...(row.project_photos ?? [])].sort(byCreatedAtDesc);
   const materialRows = [...(row.project_materials ?? [])].sort(byCreatedAtAsc);
   const noteRows = [...(row.project_notes ?? [])].sort(byCreatedAtAsc);
+  const patternFiles = [...(row.pattern_files ?? [])]
+    .sort(byCreatedAtAsc)
+    .map((file) => ({
+      id: file.id,
+      fileUrl: file.file_url,
+      name: file.name,
+      contentType: file.content_type,
+    }));
 
   return {
     id: row.id,
@@ -105,7 +123,8 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
     hobbyType: row.hobby_type,
     status: row.status,
     description: row.description,
-    patternFileUrl: row.pattern_file_url,
+    // No Pattern Option link yet: Pattern Options land in ticket 05
+    pattern: derivePattern(null, patternFiles),
     primaryPhotoUrl: pickProjectPhotoUrl(photoRows),
     photos: photoRows.map((photo) => ({
       id: photo.id,
@@ -157,9 +176,9 @@ export async function getProjectById(
       hobby_type,
       status,
       description,
-      pattern_file_url,
       project_photos ( id, image_url, photo_type, is_primary, created_at ),
       project_materials ( id, name, url, photo_url, comment, is_selected, created_at ),
+      pattern_files ( id, file_url, name, content_type, created_at ),
       project_notes ( id, stage, content, created_at )
     `,
     )

@@ -15,7 +15,6 @@ const sampleRow: ProjectDetailRow = {
   hobby_type: "knit",
   status: "in_progress",
   description: "Stripy, for winter",
-  pattern_file_url: "https://example.com/pattern.pdf",
   project_photos: [
     {
       id: "ph1",
@@ -52,6 +51,22 @@ const sampleRow: ProjectDetailRow = {
       created_at: "2026-01-01T00:00:00Z",
     },
   ],
+  pattern_files: [
+    {
+      id: "f2",
+      file_url: "https://example.com/chart.png",
+      name: "Chart.png",
+      content_type: "image/png",
+      created_at: "2026-01-02T00:00:00Z",
+    },
+    {
+      id: "f1",
+      file_url: "https://example.com/pattern.pdf",
+      name: "Pattern.pdf",
+      content_type: "application/pdf",
+      created_at: "2026-01-01T00:00:00Z",
+    },
+  ],
   project_notes: [
     {
       id: "n2",
@@ -78,7 +93,6 @@ describe("mapProjectDetailRow", () => {
       hobbyType: "knit",
       status: "in_progress",
       description: "Stripy, for winter",
-      patternFileUrl: "https://example.com/pattern.pdf",
       primaryPhotoUrl: "https://example.com/old.jpg",
     });
     expect(detail.photos.map((photo) => photo.id)).toEqual(["ph2", "ph1"]);
@@ -93,6 +107,26 @@ describe("mapProjectDetailRow", () => {
       comment: "Soft",
       isSelected: true,
     });
+  });
+
+  it("derives the Pattern from its Pattern Files, oldest first", () => {
+    const detail = mapProjectDetailRow(sampleRow);
+
+    const files = [
+      {
+        id: "f1",
+        fileUrl: "https://example.com/pattern.pdf",
+        name: "Pattern.pdf",
+        contentType: "application/pdf",
+      },
+      {
+        id: "f2",
+        fileUrl: "https://example.com/chart.png",
+        name: "Chart.png",
+        contentType: "image/png",
+      },
+    ];
+    expect(detail.pattern).toEqual({ url: null, files });
   });
 
   it("falls back to latest photo when none is primary", () => {
@@ -123,15 +157,15 @@ describe("mapProjectDetailRow", () => {
     const detail = mapProjectDetailRow({
       ...sampleRow,
       description: null,
-      pattern_file_url: null,
       project_photos: [],
       project_materials: null,
+      pattern_files: null,
       project_notes: null,
     });
 
     expect(detail.primaryPhotoUrl).toBeNull();
     expect(detail.description).toBeNull();
-    expect(detail.patternFileUrl).toBeNull();
+    expect(detail.pattern).toBeNull();
     expect(detail.photos).toEqual([]);
     expect(detail.materials).toEqual([]);
     expect(detail.notes).toEqual([]);

@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import { storagePathFromSignedUrl } from "./storage-path-from-signed-url";
+import { storagePathFromSignedUrl } from "./storage-path";
 import type {
   DataResult,
   ProjectsStorageClient,
@@ -34,7 +34,7 @@ export async function deleteMaterialOption(
 
   const photoUrl = deleted[0].photo_url;
   const path = photoUrl
-    ? storagePathFromSignedUrl(photoUrl, PROJECT_PHOTOS_BUCKET)
+    ? storagePathFromSignedUrl(PROJECT_PHOTOS_BUCKET, photoUrl)
     : null;
   if (path) {
     // The option is already gone; a leftover file is only clutter

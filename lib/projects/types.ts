@@ -47,6 +47,12 @@ export type UpdateProjectInput = {
   description?: string | null;
 };
 
+export type InsertPatternFileInput = {
+  file_url: string;
+  name: string;
+  content_type: string;
+};
+
 export type PhotoType = "inspiration" | "material" | "progress" | "finished";
 
 export type InsertProjectPhotoInput = {

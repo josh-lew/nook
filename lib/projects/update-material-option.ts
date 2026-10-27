@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import { storagePathFromSignedUrl } from "./storage-path-from-signed-url";
+import { storagePathFromSignedUrl } from "./storage-path";
 import type {
   DataResult,
   ProjectsStorageClient,
@@ -58,7 +58,7 @@ export async function updateMaterialOption(
 
   const oldPath =
     oldPhotoUrl && oldPhotoUrl !== values.photo_url
-      ? storagePathFromSignedUrl(oldPhotoUrl, PROJECT_PHOTOS_BUCKET)
+      ? storagePathFromSignedUrl(PROJECT_PHOTOS_BUCKET, oldPhotoUrl)
       : null;
   if (oldPath) {
     // The edit is saved; a leftover file is only clutter
