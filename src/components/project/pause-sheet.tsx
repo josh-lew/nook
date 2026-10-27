@@ -17,16 +17,19 @@ type PauseSheetProps = {
   visible: boolean;
   /** Set while the pause is being saved. */
   pausing: boolean;
+  /** Why the last pause failed; the sheet stays open with the note kept. */
+  error: string | null;
   /** Closes the sheet without pausing. */
   onCancel: () => void;
-  /** Pauses the Project; a blank note is skipped. */
-  onPause: (note: string) => void;
+  /** Pauses the Project; a blank note is skipped. Resolves true once paused. */
+  onPause: (note: string) => Promise<boolean>;
 };
 
 /** Asks where the maker got to before Pausing; the note can be skipped. */
 export function PauseSheet({
   visible,
   pausing,
+  error,
   onCancel,
   onPause,
 }: PauseSheetProps) {
@@ -39,9 +42,10 @@ export function PauseSheet({
     onCancel();
   };
 
-  const pause = (withNote: string) => {
-    setNote("");
-    onPause(withNote);
+  const pause = async (withNote: string) => {
+    if (await onPause(withNote)) {
+      setNote("");
+    }
   };
 
   return (
@@ -96,12 +100,20 @@ export function PauseSheet({
             ]}
           />
 
+          {error ? (
+            <ThemedText type="small" style={{ color: theme.error }}>
+              {error}
+            </ThemedText>
+          ) : null}
+
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Skip note"
               disabled={pausing}
-              onPress={() => pause("")}
+              onPress={() => {
+                void pause("");
+              }}
               style={({ pressed }) => [
                 styles.button,
                 pressed && styles.pressed,
@@ -114,7 +126,9 @@ export function PauseSheet({
               accessibilityRole="button"
               accessibilityLabel="Pause"
               disabled={pausing}
-              onPress={() => pause(note)}
+              onPress={() => {
+                void pause(note);
+              }}
               style={({ pressed }) => [
                 styles.button,
                 { backgroundColor: theme.primary },

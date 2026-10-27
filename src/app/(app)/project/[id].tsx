@@ -93,6 +93,7 @@ export default function ProjectDetailScreen() {
   const [stagePrompt, setStagePrompt] = useState<StagePromptKind | null>(null);
   const [pauseSheetVisible, setPauseSheetVisible] = useState(false);
   const [pausing, setPausing] = useState(false);
+  const [pauseError, setPauseError] = useState<string | null>(null);
 
   const busy = saving || sectionBusy || deleting || moving || pausing;
 
@@ -189,21 +190,24 @@ export default function ProjectDetailScreen() {
     setMoving(false);
   };
 
+  /** Resolves true once paused, so the sheet can keep the note on failure. */
   const handlePause = async (note: string) => {
     if (!project) {
-      return;
+      return false;
     }
 
-    setActionError(null);
+    setPauseError(null);
     setPausing(true);
     const result = await pauseProject(project.id, note);
-    if (result.error) {
-      setActionError(result.error);
-    }
     // Reload either way: a failed note still leaves the Project Paused
     await reload();
     setPausing(false);
+    if (result.error) {
+      setPauseError(result.error);
+      return false;
+    }
     setPauseSheetVisible(false);
+    return true;
   };
 
   const handleResume = async () => {
@@ -216,9 +220,9 @@ export default function ProjectDetailScreen() {
     const result = await resumeProject(project.id);
     if (result.error) {
       setActionError(result.error);
-    } else {
-      await reload();
     }
+    // Reload either way: an error may mean it changed elsewhere
+    await reload();
     setPausing(false);
   };
 
@@ -556,10 +560,12 @@ export default function ProjectDetailScreen() {
       <PauseSheet
         visible={pauseSheetVisible}
         pausing={pausing}
-        onCancel={() => setPauseSheetVisible(false)}
-        onPause={(note) => {
-          void handlePause(note);
+        error={pauseError}
+        onCancel={() => {
+          setPauseError(null);
+          setPauseSheetVisible(false);
         }}
+        onPause={handlePause}
       />
     </ThemedView>
   );
