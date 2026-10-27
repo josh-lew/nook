@@ -71,8 +71,8 @@ export async function promoteIdea(
   const { data: promoted, error } = await client
     .from("projects")
     .update({
+      // promoted_at is stamped by a trigger (11_promote_ideas.sql) on the database clock
       status: "planning",
-      promoted_at: new Date().toISOString(),
       seed_description: row.description,
       plan_order: nextRank,
     })

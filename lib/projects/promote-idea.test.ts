@@ -11,12 +11,7 @@ function updateCall(client: ReturnType<typeof createMockProjectsClient>) {
 }
 
 describe("promoteIdea", () => {
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
   it("turns an Idea into a Planning Project at the bottom of the Planning ranking", async () => {
-    jest.useFakeTimers().setSystemTime(new Date("2026-10-27T09:00:00.000Z"));
     const client = createMockProjectsClient({
       queryResults: [
         {
@@ -35,7 +30,6 @@ describe("promoteIdea", () => {
       kind: "update",
       values: {
         status: "planning",
-        promoted_at: "2026-10-27T09:00:00.000Z",
         seed_description: "Saw it on Pinterest",
         plan_order: 5,
       },
