@@ -31,6 +31,13 @@ export type InsertProjectMaterialInput = {
   is_selected?: boolean;
 };
 
+/** A candidate pattern: a link and/or screenshot, with an optional comment. */
+export type PatternOptionInput = {
+  url?: string | null;
+  photo_url?: string | null;
+  comment?: string | null;
+};
+
 /** Edits to a Material Option; `is_selected` marks it as chosen. */
 export type UpdateMaterialOptionInput = {
   url?: string | null;
@@ -85,6 +92,11 @@ export type ProjectsUpdateBuilder = {
   ) => ProjectsUpdateBuilder;
   select: (columns?: string) => {
     single: () => Promise<{
+      data: { id: string } | null;
+      error: { message: string } | null;
+    }>;
+    /** Like `single`, but no matching row is `data: null` rather than an error. */
+    maybeSingle: () => Promise<{
       data: { id: string } | null;
       error: { message: string } | null;
     }>;
@@ -167,6 +179,11 @@ export type ProjectsQueryBuilder = {
     options?: { ascending?: boolean },
   ) => ProjectsQueryBuilder;
   single: () => Promise<{
+    data: unknown;
+    error: { message: string } | null;
+  }>;
+  /** Like `single`, but no matching row is `data: null` rather than an error. */
+  maybeSingle: () => Promise<{
     data: unknown;
     error: { message: string } | null;
   }>;

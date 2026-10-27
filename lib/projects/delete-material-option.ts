@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { PROJECT_PHOTOS_BUCKET } from "./buckets";
 import { storagePathFromSignedUrl } from "./storage-path";
 import type {
   DataResult,
@@ -7,7 +8,6 @@ import type {
 } from "./types";
 
 /** Material screenshots upload alongside the Project's photos. */
-const PROJECT_PHOTOS_BUCKET = "project-photos";
 
 type MaterialsClient = ProjectsSupabaseClient & ProjectsStorageClient;
 

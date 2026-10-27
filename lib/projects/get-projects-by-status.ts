@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { hasPattern } from "./derive-pattern";
 import type {
   DataResult,
   HobbyType,
@@ -32,6 +33,11 @@ type NestedMaterial = {
   created_at: string;
 };
 
+type NestedPatternOption = {
+  id: string;
+  is_selected: boolean | null;
+};
+
 type NestedPatternFile = {
   id: string;
 };
@@ -46,6 +52,7 @@ export type ProjectListRow = {
   pattern_files: NestedPatternFile[] | null;
   project_photos: NestedPhoto[] | null;
   project_materials: NestedMaterial[] | null;
+  pattern_options: NestedPatternOption[] | null;
 };
 
 export function pickLatestPhotoUrl(
@@ -106,8 +113,7 @@ export function mapProjectListRow(row: ProjectListRow): ProjectListItem {
     hobbyType: row.hobby_type,
     stage: row.status,
     photoUrl: pickProjectPhotoUrl(row.project_photos),
-    // A chosen Pattern Option will also count once ticket 05 lands
-    hasPattern: Boolean(row.pattern_files?.length),
+    hasPattern: hasPattern(row.pattern_options, row.pattern_files),
     hasMaterial: Boolean(row.project_materials?.length),
     materialName: pickMaterialName(row.project_materials),
     createdAt: row.created_at,
@@ -143,6 +149,7 @@ export async function getProjectsByStatus(
       plan_order,
       project_photos ( id, image_url, created_at, is_primary ),
       project_materials ( id, name, is_selected, created_at ),
+      pattern_options ( id, is_selected ),
       pattern_files ( id )
     `,
     )

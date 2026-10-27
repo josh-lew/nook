@@ -89,6 +89,7 @@ function createQueryBuilder(
     ...createFilterMethods(call, () => builder),
     order: () => builder,
     single: () => Promise.resolve(result),
+    maybeSingle: () => Promise.resolve(result),
     then: (onFulfilled, onRejected) =>
       Promise.resolve(result).then(onFulfilled, onRejected),
   };
@@ -125,13 +126,14 @@ function createUpdateBuilder(
       onUpdate?.(values, column, ids);
       return filters.in(column, ids);
     },
-    select: () => ({
-      single: () =>
+    select: () => {
+      const selected = () =>
         Promise.resolve({
           data: insertResult.data,
           error: result.error ?? insertResult.error,
-        }),
-    }),
+        });
+      return { single: selected, maybeSingle: selected };
+    },
     then: (onFulfilled, onRejected) =>
       Promise.resolve(result).then(onFulfilled, onRejected),
   };

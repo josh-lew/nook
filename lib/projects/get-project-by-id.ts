@@ -27,6 +27,14 @@ export type ProjectDetailMaterial = {
   isSelected: boolean;
 };
 
+export type ProjectDetailPatternOption = {
+  id: string;
+  url: string | null;
+  photoUrl: string | null;
+  comment: string | null;
+  isSelected: boolean;
+};
+
 export type ProjectDetailNote = {
   id: string;
   stage: Stage;
@@ -42,6 +50,7 @@ export type ProjectDetail = {
   description: string | null;
   /** Derived from the chosen Pattern Option and the Pattern Files; null when there is none. */
   pattern: Pattern | null;
+  patternOptions: ProjectDetailPatternOption[];
   primaryPhotoUrl: string | null;
   photos: ProjectDetailPhoto[];
   materials: ProjectDetailMaterial[];
@@ -59,6 +68,15 @@ type DetailPhotoRow = {
 type DetailMaterialRow = {
   id: string;
   name: string | null;
+  url: string | null;
+  photo_url: string | null;
+  comment: string | null;
+  is_selected: boolean | null;
+  created_at: string;
+};
+
+type DetailPatternOptionRow = {
+  id: string;
   url: string | null;
   photo_url: string | null;
   comment: string | null;
@@ -89,6 +107,7 @@ export type ProjectDetailRow = {
   description: string | null;
   project_photos: DetailPhotoRow[] | null;
   project_materials: DetailMaterialRow[] | null;
+  pattern_options: DetailPatternOptionRow[] | null;
   pattern_files: DetailPatternFileRow[] | null;
   project_notes: DetailNoteRow[] | null;
 };
@@ -107,6 +126,9 @@ function byCreatedAtDesc(
 export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
   const photoRows = [...(row.project_photos ?? [])].sort(byCreatedAtDesc);
   const materialRows = [...(row.project_materials ?? [])].sort(byCreatedAtAsc);
+  const patternOptionRows = [...(row.pattern_options ?? [])].sort(
+    byCreatedAtAsc,
+  );
   const noteRows = [...(row.project_notes ?? [])].sort(byCreatedAtAsc);
   const patternFiles = [...(row.pattern_files ?? [])]
     .sort(byCreatedAtAsc)
@@ -123,8 +145,14 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
     hobbyType: row.hobby_type,
     status: row.status,
     description: row.description,
-    // No Pattern Option link yet: Pattern Options land in ticket 05
-    pattern: derivePattern(null, patternFiles),
+    pattern: derivePattern(patternOptionRows, patternFiles),
+    patternOptions: patternOptionRows.map((option) => ({
+      id: option.id,
+      url: option.url,
+      photoUrl: option.photo_url,
+      comment: option.comment,
+      isSelected: Boolean(option.is_selected),
+    })),
     primaryPhotoUrl: pickProjectPhotoUrl(photoRows),
     photos: photoRows.map((photo) => ({
       id: photo.id,
@@ -178,6 +206,7 @@ export async function getProjectById(
       description,
       project_photos ( id, image_url, photo_type, is_primary, created_at ),
       project_materials ( id, name, url, photo_url, comment, is_selected, created_at ),
+      pattern_options ( id, url, photo_url, comment, is_selected, created_at ),
       pattern_files ( id, file_url, name, content_type, created_at ),
       project_notes ( id, stage, content, created_at )
     `,

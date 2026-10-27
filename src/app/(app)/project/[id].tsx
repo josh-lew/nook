@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
 import { MaterialOptions } from "@/components/project/material-options";
+import { PatternOptions } from "@/components/project/pattern-options";
 import { ProjectNotes } from "@/components/project/project-notes";
 import {
   OpenPatternButton,
@@ -207,14 +208,22 @@ export default function ProjectDetailScreen() {
 
   const sections: Record<Section, ReactNode> = {
     pattern: (
-      <ProjectPattern
-        key="pattern"
-        project={project}
-        disabled={busy}
-        onBusyChange={setSectionBusy}
-        onError={setActionError}
-        onChanged={reload}
-      />
+      <View key="pattern" style={styles.section}>
+        <ProjectPattern
+          project={project}
+          disabled={busy}
+          onBusyChange={setSectionBusy}
+          onError={setActionError}
+          onChanged={reload}
+        />
+        <PatternOptions
+          project={project}
+          disabled={busy}
+          onBusyChange={setSectionBusy}
+          onError={setActionError}
+          onChanged={reload}
+        />
+      </View>
     ),
     materials: (
       <MaterialOptions

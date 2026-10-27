@@ -48,6 +48,10 @@ const sampleRow: ProjectListRow = {
       created_at: "2026-01-02T00:00:00Z",
     },
   ],
+  pattern_options: [
+    { id: "po1", is_selected: false },
+    { id: "po2", is_selected: true },
+  ],
 };
 
 describe("pickLatestPhotoUrl", () => {
@@ -133,6 +137,36 @@ describe("mapProjectListRow", () => {
     });
   });
 
+  it("has a Pattern once an option is chosen or a Pattern File is added", () => {
+    expect(mapProjectListRow(sampleRow).hasPattern).toBe(true);
+    expect(
+      mapProjectListRow({ ...sampleRow, pattern_files: [] }).hasPattern,
+    ).toBe(true);
+    expect(
+      mapProjectListRow({
+        ...sampleRow,
+        pattern_options: [{ id: "po1", is_selected: false }],
+      }).hasPattern,
+    ).toBe(true);
+  });
+
+  it("has no Pattern while Pattern Options are only being weighed up", () => {
+    expect(
+      mapProjectListRow({
+        ...sampleRow,
+        pattern_options: [{ id: "po1", is_selected: false }],
+        pattern_files: [],
+      }).hasPattern,
+    ).toBe(false);
+    expect(
+      mapProjectListRow({
+        ...sampleRow,
+        pattern_options: null,
+        pattern_files: null,
+      }).hasPattern,
+    ).toBe(false);
+  });
+
   it("uses the primary photo when present", () => {
     expect(
       mapProjectListRow({
@@ -153,16 +187,6 @@ describe("mapProjectListRow", () => {
         ],
       }).photoUrl,
     ).toBe("https://example.com/primary.jpg");
-  });
-
-  it("has a Pattern only when it has Pattern Files", () => {
-    expect(mapProjectListRow(sampleRow).hasPattern).toBe(true);
-    expect(
-      mapProjectListRow({ ...sampleRow, pattern_files: [] }).hasPattern,
-    ).toBe(false);
-    expect(
-      mapProjectListRow({ ...sampleRow, pattern_files: null }).hasPattern,
-    ).toBe(false);
   });
 });
 

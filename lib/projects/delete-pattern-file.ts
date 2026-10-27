@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { PATTERN_FILES_BUCKET } from "./buckets";
 import { storagePathFromSignedUrl } from "./storage-path";
 import type {
   DataResult,
@@ -6,7 +7,6 @@ import type {
   ProjectsSupabaseClient,
 } from "./types";
 
-const PATTERN_FILES_BUCKET = "pattern-files";
 
 type PatternFilesClient = ProjectsSupabaseClient & ProjectsStorageClient;
 

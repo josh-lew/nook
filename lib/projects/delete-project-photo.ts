@@ -1,12 +1,11 @@
 import { supabase } from "../supabase";
+import { PROJECT_PHOTOS_BUCKET } from "./buckets";
 import { storagePathFromSignedUrl } from "./storage-path";
 import type {
   DataResult,
   ProjectsStorageClient,
   ProjectsSupabaseClient,
 } from "./types";
-
-const PROJECT_PHOTOS_BUCKET = "project-photos";
 
 type PhotosClient = ProjectsSupabaseClient & ProjectsStorageClient;
 

@@ -51,6 +51,24 @@ const sampleRow: ProjectDetailRow = {
       created_at: "2026-01-01T00:00:00Z",
     },
   ],
+  pattern_options: [
+    {
+      id: "po2",
+      url: "https://example.com/later-pattern",
+      photo_url: null,
+      comment: "Free on the blog",
+      is_selected: true,
+      created_at: "2026-01-02T00:00:00Z",
+    },
+    {
+      id: "po1",
+      url: null,
+      photo_url: "https://example.com/screenshot.jpg",
+      comment: null,
+      is_selected: false,
+      created_at: "2026-01-01T00:00:00Z",
+    },
+  ],
   pattern_files: [
     {
       id: "f2",
@@ -109,24 +127,73 @@ describe("mapProjectDetailRow", () => {
     });
   });
 
-  it("derives the Pattern from its Pattern Files, oldest first", () => {
+  const patternFiles = [
+    {
+      id: "f1",
+      fileUrl: "https://example.com/pattern.pdf",
+      name: "Pattern.pdf",
+      contentType: "application/pdf",
+    },
+    {
+      id: "f2",
+      fileUrl: "https://example.com/chart.png",
+      name: "Chart.png",
+      contentType: "image/png",
+    },
+  ];
+
+  const noneChosen = sampleRow.pattern_options!.map((option) => ({
+    ...option,
+    is_selected: false,
+  }));
+
+  it("lists Pattern Options oldest-first and derives the Pattern from the chosen one plus the files", () => {
     const detail = mapProjectDetailRow(sampleRow);
 
-    const files = [
+    expect(detail.patternOptions).toEqual([
       {
-        id: "f1",
-        fileUrl: "https://example.com/pattern.pdf",
-        name: "Pattern.pdf",
-        contentType: "application/pdf",
+        id: "po1",
+        url: null,
+        photoUrl: "https://example.com/screenshot.jpg",
+        comment: null,
+        isSelected: false,
       },
       {
-        id: "f2",
-        fileUrl: "https://example.com/chart.png",
-        name: "Chart.png",
-        contentType: "image/png",
+        id: "po2",
+        url: "https://example.com/later-pattern",
+        photoUrl: null,
+        comment: "Free on the blog",
+        isSelected: true,
       },
-    ];
-    expect(detail.pattern).toEqual({ url: null, files });
+    ]);
+    expect(detail.pattern).toEqual({
+      optionId: "po2",
+      url: "https://example.com/later-pattern",
+      files: patternFiles,
+    });
+  });
+
+  it("derives the Pattern from its Pattern Files, oldest first, with no option chosen", () => {
+    const detail = mapProjectDetailRow({
+      ...sampleRow,
+      pattern_options: noneChosen,
+    });
+
+    expect(detail.pattern).toEqual({
+      optionId: null,
+      url: null,
+      files: patternFiles,
+    });
+  });
+
+  it("has no Pattern with no option chosen and no Pattern Files", () => {
+    const detail = mapProjectDetailRow({
+      ...sampleRow,
+      pattern_options: noneChosen,
+      pattern_files: [],
+    });
+
+    expect(detail.pattern).toBeNull();
   });
 
   it("falls back to latest photo when none is primary", () => {
@@ -159,6 +226,7 @@ describe("mapProjectDetailRow", () => {
       description: null,
       project_photos: [],
       project_materials: null,
+      pattern_options: null,
       pattern_files: null,
       project_notes: null,
     });
@@ -168,6 +236,7 @@ describe("mapProjectDetailRow", () => {
     expect(detail.pattern).toBeNull();
     expect(detail.photos).toEqual([]);
     expect(detail.materials).toEqual([]);
+    expect(detail.patternOptions).toEqual([]);
     expect(detail.notes).toEqual([]);
   });
 });
