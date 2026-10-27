@@ -21,6 +21,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
 import { ProjectNotes } from "@/components/project/project-notes";
+import {
+  OpenPatternButton,
+  ProjectPattern,
+} from "@/components/project/project-pattern";
 import { ProjectPhotos } from "@/components/project/project-photos";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -203,23 +207,14 @@ export default function ProjectDetailScreen() {
 
   const sections: Record<Section, ReactNode> = {
     pattern: (
-      <View key="pattern" style={styles.section}>
-        <ThemedText type="smallBold">Pattern</ThemedText>
-        {project.patternFileUrl ? (
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => {
-              void Linking.openURL(project.patternFileUrl!);
-            }}
-          >
-            <ThemedText type="linkPrimary">Open pattern</ThemedText>
-          </Pressable>
-        ) : (
-          <ThemedText type="small" themeColor="textSecondary">
-            No pattern yet.
-          </ThemedText>
-        )}
-      </View>
+      <ProjectPattern
+        key="pattern"
+        project={project}
+        disabled={busy}
+        onBusyChange={setSectionBusy}
+        onError={setActionError}
+        onChanged={reload}
+      />
     ),
     materials: (
       <View key="materials" style={styles.section}>
@@ -322,6 +317,10 @@ export default function ProjectDetailScreen() {
         <ThemedText type="small" themeColor="textSecondary">
           {STAGE_LABELS[stage]}
         </ThemedText>
+
+        {stage === "in_progress" && project.pattern ? (
+          <OpenPatternButton pattern={project.pattern} />
+        ) : null}
 
         <View style={styles.field}>
           <ThemedText type="small" themeColor="textSecondary">
