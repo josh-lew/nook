@@ -34,6 +34,7 @@ export type {
 export type { IdeaListItem, IdeaListRow } from "./get-ideas";
 
 export { deleteProject } from "./delete-project";
+export { defaultPhotoType } from "./default-photo-type";
 export { deleteProjectPhoto } from "./delete-project-photo";
 export { getIdeas, mapIdeaListRow } from "./get-ideas";
 export { insertIdea } from "./insert-idea";

@@ -1,46 +1,51 @@
 import { Image } from "expo-image";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Linking,
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { confirmDelete } from "@/components/confirm-delete";
+import { HobbyPicker } from "@/components/ideas/hobby-picker";
+import { ProjectNotes, STAGE_LABELS } from "@/components/project/project-notes";
+import { ProjectPhotos } from "@/components/project/project-photos";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {
+  deleteProject,
   getProjectById,
+  updateProject,
+  type HobbyType,
   type ProjectDetail,
   type Stage,
 } from "../../../../lib/projects";
 
-const STAGE_LABELS: Record<Stage, string> = {
-  planning: "Planning",
-  in_progress: "In Progress",
-  completed: "Completed",
+type Section = "pattern" | "materials" | "photos" | "notes";
+
+/** Every Stage shows the same sections, led by what matters at that Stage. */
+const SECTION_ORDER: Record<Stage, Section[]> = {
+  planning: ["pattern", "materials", "photos", "notes"],
+  in_progress: ["pattern", "photos", "notes", "materials"],
+  completed: ["photos", "notes", "pattern", "materials"],
 };
 
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return iso;
-  }
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 export default function ProjectDetailScreen() {
+  const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -49,212 +54,386 @@ export default function ProjectDetailScreen() {
 
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!projectId) {
-      setProject(null);
-      setError("Project not found.");
+  const [title, setTitle] = useState("");
+  const [hobbyType, setHobbyType] = useState<HobbyType | null>(null);
+  const [description, setDescription] = useState("");
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [sectionBusy, setSectionBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const busy = saving || sectionBusy || deleting;
+
+  /** Reloads the Project. With `resetFields`, the form takes the saved values too. */
+  const load = useCallback(
+    async (resetFields: boolean) => {
+      if (!projectId) {
+        setProject(null);
+        setLoadError("Project not found.");
+        setLoading(false);
+        return;
+      }
+
+      const result = await getProjectById(projectId);
+      // Ideas share the projects table, so an Idea id must not open here
+      if (result.error || !result.data || result.data.status === "idea") {
+        setProject(null);
+        setLoadError(result.error ?? "Project not found.");
+        setLoading(false);
+        return;
+      }
+
+      setProject(result.data);
+      setLoadError(null);
+      if (resetFields) {
+        setTitle(result.data.title);
+        setHobbyType(result.data.hobbyType);
+        setDescription(result.data.description ?? "");
+      }
       setLoading(false);
-      return;
-    }
+    },
+    [projectId],
+  );
 
-    setLoading(true);
-    setError(null);
-    const result = await getProjectById(projectId);
-    if (result.error || !result.data) {
-      setProject(null);
-      setError(result.error ?? "Project not found.");
-      setLoading(false);
-      return;
-    }
+  useFocusEffect(
+    useCallback(() => {
+      void load(true);
+    }, [load]),
+  );
 
-    setProject(result.data);
-    setLoading(false);
-  }, [projectId]);
+  const reload = useCallback(() => load(false), [load]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
-    if (project?.title) {
-      navigation.setOptions({ title: project.title });
-    } else {
-      navigation.setOptions({ title: "Project" });
-    }
+    navigation.setOptions({ title: project?.title ?? "Project" });
   }, [navigation, project?.title]);
 
-  const otherPhotos =
-    project?.photos.filter(
-      (photo) =>
-        !photo.isPrimary && photo.imageUrl !== project.primaryPhotoUrl,
-    ) ?? [];
+  const dirty =
+    project !== null &&
+    (title.trim() !== project.title ||
+      hobbyType !== project.hobbyType ||
+      (description.trim() || null) !== project.description);
+
+  const handleSave = async () => {
+    if (!project || !hobbyType) {
+      return;
+    }
+
+    if (!title.trim()) {
+      setTitleError("Title is required");
+      return;
+    }
+
+    setActionError(null);
+    setSaving(true);
+    const result = await updateProject(project.id, {
+      title,
+      hobby_type: hobbyType,
+      description,
+    });
+    if (result.error) {
+      setActionError(result.error);
+    } else {
+      await load(true);
+    }
+    setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!project) {
+      return;
+    }
+
+    const confirmed = await confirmDelete(
+      "Delete this Project?",
+      `“${project.title}” will be removed from your Projects.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError(null);
+    setDeleting(true);
+    const result = await deleteProject(project.id);
+    if (result.error) {
+      setActionError(result.error);
+      setDeleting(false);
+      return;
+    }
+
+    router.back();
+  };
+
+  if (loading) {
+    return (
+      <ThemedView style={[styles.root, styles.state]}>
+        <ActivityIndicator size="large" color={theme.textPrimary} />
+      </ThemedView>
+    );
+  }
+
+  if (loadError || !project || project.status === "idea") {
+    return (
+      <ThemedView style={[styles.root, styles.state]}>
+        <ThemedText themeColor="textSecondary" style={styles.stateText}>
+          {loadError ?? "Project not found."}
+        </ThemedText>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            setLoading(true);
+            void load(true);
+          }}
+          style={({ pressed }) => [
+            styles.retry,
+            { backgroundColor: theme.surface },
+            pressed && styles.pressed,
+          ]}
+        >
+          <ThemedText type="smallBold">Retry</ThemedText>
+        </Pressable>
+      </ThemedView>
+    );
+  }
+
+  const stage = project.status;
+
+  const sections: Record<Section, ReactNode> = {
+    pattern: (
+      <View key="pattern" style={styles.section}>
+        <ThemedText type="smallBold">Pattern</ThemedText>
+        {project.patternFileUrl ? (
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => {
+              void Linking.openURL(project.patternFileUrl!);
+            }}
+          >
+            <ThemedText type="linkPrimary">Open pattern</ThemedText>
+          </Pressable>
+        ) : (
+          <ThemedText type="small" themeColor="textSecondary">
+            No pattern yet.
+          </ThemedText>
+        )}
+      </View>
+    ),
+    materials: (
+      <View key="materials" style={styles.section}>
+        <ThemedText type="smallBold">Materials</ThemedText>
+        {project.materials.length === 0 ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            No materials yet.
+          </ThemedText>
+        ) : null}
+        {project.materials.map((material) => (
+          <View
+            key={material.id}
+            style={[styles.materialRow, { backgroundColor: theme.surface }]}
+          >
+            {material.photoUrl ? (
+              <Image
+                source={{ uri: material.photoUrl }}
+                style={styles.materialThumb}
+                contentFit="cover"
+                accessibilityLabel={
+                  material.name ? `${material.name} photo` : "Material photo"
+                }
+              />
+            ) : null}
+            <View style={styles.materialBody}>
+              <ThemedText type="smallBold">
+                {material.name?.trim() || "Untitled material"}
+              </ThemedText>
+              {material.comment?.trim() ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {material.comment.trim()}
+                </ThemedText>
+              ) : null}
+              {material.url?.trim() ? (
+                <Pressable
+                  accessibilityRole="link"
+                  onPress={() => {
+                    void Linking.openURL(material.url!);
+                  }}
+                >
+                  <ThemedText type="linkPrimary">Open link</ThemedText>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        ))}
+      </View>
+    ),
+    photos: (
+      <ProjectPhotos
+        // Remount on a Stage change so the photo type picks up the new default
+        key={`photos-${stage}`}
+        project={project}
+        stage={stage}
+        disabled={busy}
+        onBusyChange={setSectionBusy}
+        onError={setActionError}
+        onChanged={reload}
+      />
+    ),
+    notes: (
+      <ProjectNotes
+        key="notes"
+        project={project}
+        stage={stage}
+        disabled={busy}
+        onBusyChange={setSectionBusy}
+        onError={setActionError}
+        onChanged={reload}
+      />
+    ),
+  };
 
   return (
     <ThemedView style={styles.root}>
-      {loading ? (
-        <View style={styles.state}>
-          <ActivityIndicator size="large" color={theme.textPrimary} />
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, Spacing.four) },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={[styles.hero, { backgroundColor: theme.border }]}>
+          {project.primaryPhotoUrl ? (
+            <Image
+              source={{ uri: project.primaryPhotoUrl }}
+              style={styles.heroImage}
+              contentFit="cover"
+              accessibilityLabel={`${project.title} cover photo`}
+            />
+          ) : (
+            <SymbolView
+              name={{ ios: "photo", android: "photo", web: "photo" }}
+              size={48}
+              tintColor={theme.textSecondary}
+            />
+          )}
         </View>
-      ) : null}
 
-      {!loading && error ? (
-        <View style={styles.state}>
-          <ThemedText themeColor="textSecondary" style={styles.stateText}>
-            {error}
+        <ThemedText type="small" themeColor="textSecondary">
+          {STAGE_LABELS[stage]}
+        </ThemedText>
+
+        <View style={styles.field}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Title
           </ThemedText>
+          <TextInput
+            accessibilityLabel="Title"
+            editable={!busy}
+            value={title}
+            onChangeText={(value) => {
+              setTitle(value);
+              if (titleError && value.trim()) {
+                setTitleError(null);
+              }
+            }}
+            placeholderTextColor={theme.textSecondary}
+            style={[
+              styles.input,
+              {
+                color: theme.textPrimary,
+                backgroundColor: theme.surface,
+                borderColor: titleError ? theme.error : theme.border,
+              },
+            ]}
+          />
+          {titleError ? (
+            <ThemedText type="small" style={{ color: theme.error }}>
+              {titleError}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        <HobbyPicker value={hobbyType} disabled={busy} onChange={setHobbyType} />
+
+        <View style={styles.field}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Description
+          </ThemedText>
+          <TextInput
+            accessibilityLabel="Description"
+            editable={!busy}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="What are you making?"
+            placeholderTextColor={theme.textSecondary}
+            multiline
+            style={[
+              styles.input,
+              styles.multiline,
+              {
+                color: theme.textPrimary,
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
+            ]}
+          />
+        </View>
+
+        {dirty ? (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel="Save changes"
+            disabled={busy}
             onPress={() => {
-              void load();
+              void handleSave();
             }}
             style={({ pressed }) => [
-              styles.retry,
-              { backgroundColor: theme.surface },
+              styles.primaryBtn,
+              { backgroundColor: theme.primary },
               pressed && styles.pressed,
+              busy && styles.disabled,
             ]}
           >
-            <ThemedText type="smallBold">Retry</ThemedText>
+            {saving ? (
+              <ActivityIndicator color={theme.onPrimary} />
+            ) : (
+              <ThemedText style={{ color: theme.onPrimary }}>
+                Save changes
+              </ThemedText>
+            )}
           </Pressable>
-        </View>
-      ) : null}
+        ) : null}
 
-      {!loading && !error && project ? (
-        <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: Math.max(insets.bottom, Spacing.four) },
+        {actionError ? (
+          <ThemedText type="small" style={{ color: theme.error }}>
+            {actionError}
+          </ThemedText>
+        ) : null}
+
+        {SECTION_ORDER[stage].map((section) => sections[section])}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Delete project"
+          disabled={busy}
+          onPress={() => {
+            void handleDelete();
+          }}
+          style={({ pressed }) => [
+            styles.deleteBtn,
+            { borderColor: theme.error },
+            pressed && styles.pressed,
           ]}
         >
-          <ThemedText type="subtitle">{project.title}</ThemedText>
-
-          <View
-            style={[
-              styles.hero,
-              { backgroundColor: theme.border },
-            ]}
-          >
-            {project.primaryPhotoUrl ? (
-              <Image
-                source={{ uri: project.primaryPhotoUrl }}
-                style={styles.heroImage}
-                contentFit="cover"
-                accessibilityLabel={`${project.title} photo`}
-              />
-            ) : (
-              <SymbolView
-                name={{
-                  ios: "photo",
-                  android: "photo",
-                  web: "photo",
-                }}
-                size={48}
-                tintColor={theme.textSecondary}
-              />
-            )}
-          </View>
-
-          {project.patternFileUrl ? (
-            <View style={styles.section}>
-              <ThemedText type="smallBold">Pattern</ThemedText>
-              <Pressable
-                accessibilityRole="link"
-                onPress={() => {
-                  void Linking.openURL(project.patternFileUrl!);
-                }}
-              >
-                <ThemedText type="linkPrimary">Open pattern</ThemedText>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {project.materials.length > 0 ? (
-            <View style={styles.section}>
-              <ThemedText type="smallBold">Materials</ThemedText>
-              {project.materials.map((material) => (
-                <View
-                  key={material.id}
-                  style={[
-                    styles.materialRow,
-                    { backgroundColor: theme.surface },
-                  ]}
-                >
-                  {material.photoUrl ? (
-                    <Image
-                      source={{ uri: material.photoUrl }}
-                      style={styles.materialThumb}
-                      contentFit="cover"
-                      accessibilityLabel={
-                        material.name
-                          ? `${material.name} photo`
-                          : "Material photo"
-                      }
-                    />
-                  ) : null}
-                  <View style={styles.materialBody}>
-                    <ThemedText type="smallBold">
-                      {material.name?.trim() || "Untitled material"}
-                    </ThemedText>
-                    {material.comment?.trim() ? (
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {material.comment.trim()}
-                      </ThemedText>
-                    ) : null}
-                    {material.url?.trim() ? (
-                      <Pressable
-                        accessibilityRole="link"
-                        onPress={() => {
-                          void Linking.openURL(material.url!);
-                        }}
-                      >
-                        <ThemedText type="linkPrimary">Open link</ThemedText>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {otherPhotos.length > 0 ? (
-            <View style={styles.section}>
-              <ThemedText type="smallBold">Other photos</ThemedText>
-              <View style={styles.photoGrid}>
-                {otherPhotos.map((photo) => (
-                  <Image
-                    key={photo.id}
-                    source={{ uri: photo.imageUrl }}
-                    style={styles.gridPhoto}
-                    contentFit="cover"
-                    accessibilityLabel="Project photo"
-                  />
-                ))}
-              </View>
-            </View>
-          ) : null}
-
-          {project.notes.length > 0 ? (
-            <View style={styles.section}>
-              <ThemedText type="smallBold">Notes</ThemedText>
-              {project.notes.map((note) => (
-                <View
-                  key={note.id}
-                  style={[
-                    styles.noteRow,
-                    { backgroundColor: theme.surface },
-                  ]}
-                >
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {STAGE_LABELS[note.stage]} · {formatDate(note.createdAt)}
-                  </ThemedText>
-                  <ThemedText>{note.content}</ThemedText>
-                </View>
-              ))}
-            </View>
-          ) : null}
-        </ScrollView>
-      ) : null}
+          {deleting ? (
+            <ActivityIndicator color={theme.error} />
+          ) : (
+            <ThemedText style={{ color: theme.error }}>
+              Delete project
+            </ThemedText>
+          )}
+        </Pressable>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -269,11 +448,10 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   state: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
+    padding: Spacing.four,
   },
   stateText: {
     textAlign: "center",
@@ -295,6 +473,29 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  field: {
+    gap: Spacing.one,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    fontSize: 16,
+  },
+  multiline: {
+    minHeight: 96,
+    textAlignVertical: "top",
+  },
+  primaryBtn: {
+    alignSelf: "flex-end",
+    minWidth: 88,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    borderRadius: Spacing.two,
+  },
   section: {
     gap: Spacing.two,
   },
@@ -313,22 +514,18 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.half,
   },
-  photoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.two,
-  },
-  gridPhoto: {
-    width: "31%",
-    aspectRatio: 1,
-    borderRadius: Spacing.one,
-  },
-  noteRow: {
-    gap: Spacing.one,
-    padding: Spacing.three,
+  deleteBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: Spacing.four,
+    paddingVertical: Spacing.two,
+    borderWidth: 1,
     borderRadius: Spacing.two,
   },
   pressed: {
     opacity: 0.7,
+  },
+  disabled: {
+    opacity: 0.6,
   },
 });
