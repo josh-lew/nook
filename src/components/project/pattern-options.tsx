@@ -322,6 +322,11 @@ export function PatternOptions({
                     The Pattern
                   </ThemedText>
                 ) : null}
+                {option.fromIdea ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    From the Idea
+                  </ThemedText>
+                ) : null}
                 {option.comment ? (
                   <ThemedText type="small">{option.comment}</ThemedText>
                 ) : null}

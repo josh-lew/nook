@@ -27,6 +27,7 @@ import {
   ProjectPattern,
 } from "@/components/project/project-pattern";
 import { ProjectPhotos } from "@/components/project/project-photos";
+import { ProjectSeed } from "@/components/project/project-seed";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { STAGE_LABELS } from "@/constants/stages";
@@ -383,6 +384,9 @@ export default function ProjectDetailScreen() {
         ) : null}
 
         {SECTION_ORDER[stage].map((section) => sections[section])}
+
+        {/* Tucked below the current work: it's for looking back */}
+        {project.seed ? <ProjectSeed seed={project.seed} /> : null}
 
         <Pressable
           accessibilityRole="button"

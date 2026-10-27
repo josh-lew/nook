@@ -4,6 +4,7 @@ import { pickProjectPhotoUrl } from "./get-projects-by-status";
 import type {
   DataResult,
   HobbyType,
+  PhotoStage,
   PhotoType,
   ProjectStatus,
   ProjectsSupabaseClient,
@@ -25,6 +26,8 @@ export type ProjectDetailMaterial = {
   photoUrl: string | null;
   comment: string | null;
   isSelected: boolean;
+  /** Saved while the Project was still an Idea. */
+  fromIdea: boolean;
 };
 
 export type ProjectDetailPatternOption = {
@@ -33,6 +36,14 @@ export type ProjectDetailPatternOption = {
   photoUrl: string | null;
   comment: string | null;
   isSelected: boolean;
+  /** Saved while the Project was still an Idea. */
+  fromIdea: boolean;
+};
+
+/** What a Promoted Project inherited from its Idea: its photos and original description. */
+export type ProjectSeed = {
+  description: string | null;
+  photos: ProjectDetailPhoto[];
 };
 
 export type ProjectDetailNote = {
@@ -48,10 +59,13 @@ export type ProjectDetail = {
   hobbyType: HobbyType;
   status: ProjectStatus;
   description: string | null;
+  /** Present only once Promoted from an Idea. */
+  seed: ProjectSeed | null;
   /** Derived from the chosen Pattern Option and the Pattern Files; null when there is none. */
   pattern: Pattern | null;
   patternOptions: ProjectDetailPatternOption[];
   primaryPhotoUrl: string | null;
+  /** The Project's own photos; a Promoted Project's Seed photos are in `seed`. */
   photos: ProjectDetailPhoto[];
   materials: ProjectDetailMaterial[];
   notes: ProjectDetailNote[];
@@ -60,6 +74,7 @@ export type ProjectDetail = {
 type DetailPhotoRow = {
   id: string;
   image_url: string;
+  stage: PhotoStage;
   photo_type: PhotoType | null;
   is_primary: boolean;
   created_at: string;
@@ -105,6 +120,8 @@ export type ProjectDetailRow = {
   hobby_type: HobbyType;
   status: ProjectStatus;
   description: string | null;
+  promoted_at: string | null;
+  seed_description: string | null;
   project_photos: DetailPhotoRow[] | null;
   project_materials: DetailMaterialRow[] | null;
   pattern_options: DetailPatternOptionRow[] | null;
@@ -123,8 +140,24 @@ function byCreatedAtDesc(
   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 }
 
+function mapPhotoRow(photo: DetailPhotoRow): ProjectDetailPhoto {
+  return {
+    id: photo.id,
+    imageUrl: photo.image_url,
+    photoType: photo.photo_type,
+    isPrimary: photo.is_primary,
+    createdAt: photo.created_at,
+  };
+}
+
 export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
   const photoRows = [...(row.project_photos ?? [])].sort(byCreatedAtDesc);
+  // An Idea's photos are its own; once Promoted they become the Seed's
+  const promotedAt = row.promoted_at ? new Date(row.promoted_at).getTime() : null;
+  const isSeedPhoto = (photo: DetailPhotoRow) =>
+    promotedAt !== null && photo.stage === "idea";
+  const fromIdea = (item: { created_at: string }) =>
+    promotedAt !== null && new Date(item.created_at).getTime() < promotedAt;
   const materialRows = [...(row.project_materials ?? [])].sort(byCreatedAtAsc);
   const patternOptionRows = [...(row.pattern_options ?? [])].sort(
     byCreatedAtAsc,
@@ -145,6 +178,13 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
     hobbyType: row.hobby_type,
     status: row.status,
     description: row.description,
+    seed:
+      promotedAt === null
+        ? null
+        : {
+            description: row.seed_description,
+            photos: photoRows.filter(isSeedPhoto).map(mapPhotoRow),
+          },
     pattern: derivePattern(patternOptionRows, patternFiles),
     patternOptions: patternOptionRows.map((option) => ({
       id: option.id,
@@ -152,15 +192,12 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
       photoUrl: option.photo_url,
       comment: option.comment,
       isSelected: Boolean(option.is_selected),
+      fromIdea: fromIdea(option),
     })),
     primaryPhotoUrl: pickProjectPhotoUrl(photoRows),
-    photos: photoRows.map((photo) => ({
-      id: photo.id,
-      imageUrl: photo.image_url,
-      photoType: photo.photo_type,
-      isPrimary: photo.is_primary,
-      createdAt: photo.created_at,
-    })),
+    photos: photoRows
+      .filter((photo) => !isSeedPhoto(photo))
+      .map(mapPhotoRow),
     materials: materialRows.map((material) => ({
       id: material.id,
       name: material.name,
@@ -168,6 +205,7 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
       photoUrl: material.photo_url,
       comment: material.comment,
       isSelected: Boolean(material.is_selected),
+      fromIdea: fromIdea(material),
     })),
     notes: noteRows.map((note) => ({
       id: note.id,
@@ -204,7 +242,9 @@ export async function getProjectById(
       hobby_type,
       status,
       description,
-      project_photos ( id, image_url, photo_type, is_primary, created_at ),
+      promoted_at,
+      seed_description,
+      project_photos ( id, image_url, stage, photo_type, is_primary, created_at ),
       project_materials ( id, name, url, photo_url, comment, is_selected, created_at ),
       pattern_options ( id, url, photo_url, comment, is_selected, created_at ),
       pattern_files ( id, file_url, name, content_type, created_at ),

@@ -8,6 +8,7 @@ export type {
   InsertProjectPhotoArgs,
   InsertProjectPhotoInput,
   PatternOptionInput,
+  PhotoStage,
   PhotoType,
   ProjectStatus,
   ProjectsDeleteBuilder,
@@ -30,6 +31,7 @@ export type {
   ProjectDetailPatternOption,
   ProjectDetailPhoto,
   ProjectDetailRow,
+  ProjectSeed,
 } from "./get-project-by-id";
 export type {
   ProjectListItem,
@@ -54,6 +56,7 @@ export { insertProjectMaterials } from "./insert-project-materials";
 export { insertProjectNote } from "./insert-project-note";
 export { insertProjectPhoto } from "./insert-project-photo";
 export { insertProjectPhotos } from "./insert-project-photos";
+export { promoteIdea } from "./promote-idea";
 export { setPrimaryPhoto } from "./set-primary-photo";
 export { updateMaterialOption } from "./update-material-option";
 export { updatePatternOption } from "./update-pattern-option";

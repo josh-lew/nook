@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { confirmDelete } from "@/components/confirm-delete";
+import { confirmAction, confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
 import { MaterialOptions } from "@/components/project/material-options";
 import { PatternOptions } from "@/components/project/pattern-options";
@@ -26,6 +26,7 @@ import {
   deleteProjectPhoto,
   getProjectById,
   insertProjectPhoto,
+  promoteIdea,
   updateProject,
   uploadProjectPhoto,
   type HobbyType,
@@ -53,8 +54,10 @@ export default function IdeaScreen() {
   const [patternsBusy, setPatternsBusy] = useState(false);
   const [materialsBusy, setMaterialsBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [promoting, setPromoting] = useState(false);
 
-  const busy = saving || photoBusy || patternsBusy || materialsBusy || deleting;
+  const busy =
+    saving || photoBusy || patternsBusy || materialsBusy || deleting || promoting;
 
   /** Reloads the Idea. With `resetFields`, the form takes the saved values too. */
   const load = useCallback(
@@ -157,8 +160,8 @@ export default function IdeaScreen() {
           ? uploadResult
           : await insertProjectPhoto(idea.id, {
               image_url: uploadResult.data.url,
-              // Ideas' photos move to the `idea` stage when Promote lands (ticket 08).
-              stage: "planning",
+              // An Idea's photos become its Seed when Promoted
+              stage: "idea",
               photo_type: "inspiration",
             });
 
@@ -181,6 +184,33 @@ export default function IdeaScreen() {
     }
     await load(false);
     setPhotoBusy(false);
+  };
+
+  const handlePromote = async () => {
+    if (!idea) {
+      return;
+    }
+
+    const confirmed = await confirmAction(
+      "Promote to a Project?",
+      `“${idea.title}” will move from your Ideas into Planning.`,
+      "Promote",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError(null);
+    setPromoting(true);
+    const result = await promoteIdea(idea.id);
+    if (result.error) {
+      setActionError(result.error);
+      setPromoting(false);
+      return;
+    }
+
+    // Same row, now a Project (docs/adr/0001)
+    router.replace({ pathname: "/project/[id]", params: { id: idea.id } });
   };
 
   const handleDelete = async () => {
@@ -418,6 +448,34 @@ export default function IdeaScreen() {
 
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Promote to a Project"
+          disabled={busy || dirty}
+          onPress={() => {
+            void handlePromote();
+          }}
+          style={({ pressed }) => [
+            styles.promoteBtn,
+            { backgroundColor: theme.primary },
+            pressed && styles.pressed,
+            (busy || dirty) && styles.disabled,
+          ]}
+        >
+          {promoting ? (
+            <ActivityIndicator color={theme.onPrimary} />
+          ) : (
+            <ThemedText style={{ color: theme.onPrimary }}>
+              Promote to a Project
+            </ThemedText>
+          )}
+        </Pressable>
+        {dirty ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            Save your changes before promoting.
+          </ThemedText>
+        ) : null}
+
+        <Pressable
+          accessibilityRole="button"
           accessibilityLabel="Delete idea"
           disabled={busy}
           onPress={() => {
@@ -510,10 +568,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     borderRadius: Spacing.two,
   },
-  deleteBtn: {
+  promoteBtn: {
     alignItems: "center",
     justifyContent: "center",
     marginTop: Spacing.four,
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.two,
+  },
+  deleteBtn: {
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: Spacing.two,
     borderWidth: 1,
     borderRadius: Spacing.two,
