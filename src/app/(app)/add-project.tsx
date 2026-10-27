@@ -21,7 +21,6 @@ import {
 import { NotesStep } from "@/components/add-project/notes-step";
 import { PatternStep } from "@/components/add-project/pattern-step";
 import {
-  defaultPhotoTypeForStage,
   type AdditionalPhotoDraft,
   type ProjectPhotoType,
 } from "@/components/add-project/photo-type";
@@ -32,6 +31,7 @@ import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {
+  defaultPhotoType,
   HobbyType,
   insertProject,
   insertProjectMaterials,
@@ -123,7 +123,7 @@ export default function AddProjectScreen() {
     hobbyType: null,
     stage: initialStage,
     primaryPhoto: null,
-    primaryPhotoType: defaultPhotoTypeForStage(initialStage),
+    primaryPhotoType: defaultPhotoType(initialStage),
     patternFile: null,
     additionalPhotos: [],
     materials: [],
@@ -144,10 +144,10 @@ export default function AddProjectScreen() {
     setForm((current) => ({
       ...current,
       stage: initialStage,
-      primaryPhotoType: defaultPhotoTypeForStage(initialStage),
+      primaryPhotoType: defaultPhotoType(initialStage),
       additionalPhotos: current.additionalPhotos.map((photo) => ({
         ...photo,
-        photoType: defaultPhotoTypeForStage(initialStage),
+        photoType: defaultPhotoType(initialStage),
       })),
     }));
   }, [initialStage]);
@@ -256,7 +256,7 @@ export default function AddProjectScreen() {
   };
 
   const applyStageChange = (stage: Stage) => {
-    const photoType = defaultPhotoTypeForStage(stage);
+    const photoType = defaultPhotoType(stage);
     setForm((current) => ({
       ...current,
       stage,

@@ -8,18 +8,6 @@ export type AdditionalPhotoDraft = {
   photoType: ProjectPhotoType;
 };
 
-export function defaultPhotoTypeForStage(
-  stage: Stage,
-): ProjectPhotoType {
-  if (stage === "in_progress") {
-    return "progress";
-  }
-  if (stage === "completed") {
-    return "finished";
-  }
-  return "inspiration";
-}
-
 export function photoTypeOptionsForStage(
   stage: Stage,
 ): { value: ProjectPhotoType; label: string }[] {

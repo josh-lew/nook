@@ -60,6 +60,28 @@ describe("updateProject", () => {
     ]);
   });
 
+  it("updates a Project's description on its own", async () => {
+    const client = createMockProjectsClient({
+      insertResult: { data: { id: "project-1" }, error: null },
+    });
+
+    const result = await updateProject(
+      "project-1",
+      { description: " Swapped to a 4mm hook " },
+      client,
+    );
+
+    expect(result).toEqual({ data: { id: "project-1" }, error: null });
+    expect(client.calls).toEqual([
+      {
+        table: "projects",
+        kind: "update",
+        values: { description: "Swapped to a 4mm hook" },
+        filters: [{ method: "eq", column: "id", value: "project-1" }],
+      },
+    ]);
+  });
+
   it("clears a blank description", async () => {
     const client = createMockProjectsClient({});
 

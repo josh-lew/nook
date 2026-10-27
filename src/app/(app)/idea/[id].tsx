@@ -5,8 +5,6 @@ import { SymbolView } from "expo-symbols";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -30,20 +29,6 @@ import {
   type HobbyType,
   type ProjectDetail,
 } from "../../../../lib/projects";
-
-/** Alert.alert is a no-op on web, so fall back to the browser's confirm there. */
-function confirmDelete(title: string, message: string): Promise<boolean> {
-  if (Platform.OS === "web") {
-    return Promise.resolve(window.confirm(`${title}\n\n${message}`));
-  }
-
-  return new Promise((resolve) => {
-    Alert.alert(title, message, [
-      { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-      { text: "Delete", style: "destructive", onPress: () => resolve(true) },
-    ]);
-  });
-}
 
 export default function IdeaScreen() {
   const router = useRouter();
