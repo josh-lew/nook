@@ -2,6 +2,7 @@ export type {
   DataResult,
   HobbyType,
   InsertIdeaInput,
+  InsertPatternFileInput,
   InsertProjectInput,
   InsertProjectMaterialInput,
   InsertProjectPhotoArgs,
@@ -19,6 +20,7 @@ export type {
   UploadsSupabaseClient,
 } from "./types";
 export type { InsertProjectNoteResult } from "./insert-project-note";
+export type { Pattern, PatternFile } from "./derive-pattern";
 export type {
   ProjectDetail,
   ProjectDetailMaterial,
@@ -33,11 +35,13 @@ export type {
 
 export type { IdeaListItem, IdeaListRow } from "./get-ideas";
 
+export { deletePatternFile } from "./delete-pattern-file";
 export { deleteProject } from "./delete-project";
 export { defaultPhotoType } from "./default-photo-type";
 export { deleteProjectPhoto } from "./delete-project-photo";
 export { getIdeas, mapIdeaListRow } from "./get-ideas";
 export { insertIdea } from "./insert-idea";
+export { insertPatternFile } from "./insert-pattern-file";
 export { insertProject } from "./insert-project";
 export { insertProjectMaterials } from "./insert-project-materials";
 export { insertProjectNote } from "./insert-project-note";

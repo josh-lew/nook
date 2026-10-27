@@ -33,10 +33,12 @@ import { useTheme } from "@/hooks/use-theme";
 import {
   defaultPhotoType,
   HobbyType,
+  insertPatternFile,
   insertProject,
   insertProjectMaterials,
   insertProjectNote,
   insertProjectPhoto,
+  resolveContentType,
   Stage,
   updateProject,
   UploadFile,
@@ -410,12 +412,14 @@ export default function AddProjectScreen() {
         return;
       }
 
-      const updateResult = await updateProject(activeProjectId, {
-        pattern_file_url: uploadResult.data.url,
+      const fileResult = await insertPatternFile(activeProjectId, {
+        file_url: uploadResult.data.url,
+        name: formSnapshot.patternFile.name,
+        content_type: resolveContentType(formSnapshot.patternFile),
       });
-      if (updateResult.error) {
+      if (fileResult.error) {
         setSaving(false);
-        showPartialFailure("pattern", updateResult.error);
+        showPartialFailure("pattern", fileResult.error);
         return;
       }
 

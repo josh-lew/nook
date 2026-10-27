@@ -17,9 +17,9 @@ const sampleRow: ProjectListRow = {
   title: "Scarf",
   hobby_type: "knit",
   status: "planning",
-  pattern_file_url: "https://example.com/pattern.pdf",
   created_at: "2026-01-02T00:00:00Z",
   plan_order: null,
+  pattern_files: [{ id: "f1" }],
   project_photos: [
     {
       id: "ph1",
@@ -153,6 +153,16 @@ describe("mapProjectListRow", () => {
         ],
       }).photoUrl,
     ).toBe("https://example.com/primary.jpg");
+  });
+
+  it("has a Pattern only when it has Pattern Files", () => {
+    expect(mapProjectListRow(sampleRow).hasPattern).toBe(true);
+    expect(
+      mapProjectListRow({ ...sampleRow, pattern_files: [] }).hasPattern,
+    ).toBe(false);
+    expect(
+      mapProjectListRow({ ...sampleRow, pattern_files: null }).hasPattern,
+    ).toBe(false);
   });
 });
 
