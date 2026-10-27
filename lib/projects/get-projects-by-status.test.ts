@@ -17,7 +17,6 @@ const sampleRow: ProjectListRow = {
   title: "Scarf",
   hobby_type: "knit",
   status: "planning",
-  pattern_file_url: "https://example.com/pattern.pdf",
   created_at: "2026-01-02T00:00:00Z",
   plan_order: null,
   project_photos: [
@@ -47,6 +46,10 @@ const sampleRow: ProjectListRow = {
       is_selected: true,
       created_at: "2026-01-02T00:00:00Z",
     },
+  ],
+  pattern_options: [
+    { id: "po1", is_selected: false },
+    { id: "po2", is_selected: true },
   ],
 };
 
@@ -131,6 +134,18 @@ describe("mapProjectListRow", () => {
       materialName: "Chosen yarn",
       createdAt: "2026-01-02T00:00:00Z",
     });
+  });
+
+  it("has no Pattern while Pattern Options are only being weighed up", () => {
+    expect(
+      mapProjectListRow({
+        ...sampleRow,
+        pattern_options: [{ id: "po1", is_selected: false }],
+      }).hasPattern,
+    ).toBe(false);
+    expect(
+      mapProjectListRow({ ...sampleRow, pattern_options: null }).hasPattern,
+    ).toBe(false);
   });
 
   it("uses the primary photo when present", () => {

@@ -52,6 +52,24 @@ const sampleRow: ProjectDetailRow = {
       created_at: "2026-01-01T00:00:00Z",
     },
   ],
+  pattern_options: [
+    {
+      id: "po2",
+      url: "https://example.com/later-pattern",
+      photo_url: null,
+      comment: "Free on the blog",
+      is_selected: true,
+      created_at: "2026-01-02T00:00:00Z",
+    },
+    {
+      id: "po1",
+      url: null,
+      photo_url: "https://example.com/screenshot.jpg",
+      comment: null,
+      is_selected: false,
+      created_at: "2026-01-01T00:00:00Z",
+    },
+  ],
   project_notes: [
     {
       id: "n2",
@@ -95,6 +113,43 @@ describe("mapProjectDetailRow", () => {
     });
   });
 
+  it("lists Pattern Options oldest-first and derives the Pattern from the chosen one", () => {
+    const detail = mapProjectDetailRow(sampleRow);
+
+    expect(detail.patternOptions).toEqual([
+      {
+        id: "po1",
+        url: null,
+        photoUrl: "https://example.com/screenshot.jpg",
+        comment: null,
+        isSelected: false,
+      },
+      {
+        id: "po2",
+        url: "https://example.com/later-pattern",
+        photoUrl: null,
+        comment: "Free on the blog",
+        isSelected: true,
+      },
+    ]);
+    expect(detail.pattern).toEqual({
+      optionId: "po2",
+      url: "https://example.com/later-pattern",
+    });
+  });
+
+  it("has no Pattern when no option is chosen", () => {
+    const detail = mapProjectDetailRow({
+      ...sampleRow,
+      pattern_options: sampleRow.pattern_options!.map((option) => ({
+        ...option,
+        is_selected: false,
+      })),
+    });
+
+    expect(detail.pattern).toBeNull();
+  });
+
   it("falls back to latest photo when none is primary", () => {
     const detail = mapProjectDetailRow({
       ...sampleRow,
@@ -126,6 +181,7 @@ describe("mapProjectDetailRow", () => {
       pattern_file_url: null,
       project_photos: [],
       project_materials: null,
+      pattern_options: null,
       project_notes: null,
     });
 
@@ -134,6 +190,8 @@ describe("mapProjectDetailRow", () => {
     expect(detail.patternFileUrl).toBeNull();
     expect(detail.photos).toEqual([]);
     expect(detail.materials).toEqual([]);
+    expect(detail.patternOptions).toEqual([]);
+    expect(detail.pattern).toBeNull();
     expect(detail.notes).toEqual([]);
   });
 });

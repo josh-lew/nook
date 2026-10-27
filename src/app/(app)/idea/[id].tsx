@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
+import { PatternOptions } from "@/components/project/pattern-options";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
@@ -48,9 +49,10 @@ export default function IdeaScreen() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [optionsBusy, setOptionsBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const busy = saving || photoBusy || deleting;
+  const busy = saving || photoBusy || optionsBusy || deleting;
 
   /** Reloads the Idea. With `resetFields`, the form takes the saved values too. */
   const load = useCallback(
@@ -389,6 +391,15 @@ export default function IdeaScreen() {
             </Pressable>
           </View>
         </View>
+
+        <PatternOptions
+          project={idea}
+          canChoose={false}
+          disabled={busy}
+          onBusyChange={setOptionsBusy}
+          onError={setActionError}
+          onChanged={() => load(false)}
+        />
 
         {actionError ? (
           <ThemedText type="small" style={{ color: theme.error }}>

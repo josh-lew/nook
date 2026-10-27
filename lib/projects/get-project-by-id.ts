@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { derivePattern, type ProjectPattern } from "./derive-pattern";
 import { pickProjectPhotoUrl } from "./get-projects-by-status";
 import type {
   DataResult,
@@ -26,6 +27,14 @@ export type ProjectDetailMaterial = {
   isSelected: boolean;
 };
 
+export type ProjectDetailPatternOption = {
+  id: string;
+  url: string | null;
+  photoUrl: string | null;
+  comment: string | null;
+  isSelected: boolean;
+};
+
 export type ProjectDetailNote = {
   id: string;
   stage: Stage;
@@ -40,6 +49,9 @@ export type ProjectDetail = {
   status: ProjectStatus;
   description: string | null;
   patternFileUrl: string | null;
+  /** The chosen Pattern Option, or null when the Project has no Pattern yet. */
+  pattern: ProjectPattern | null;
+  patternOptions: ProjectDetailPatternOption[];
   primaryPhotoUrl: string | null;
   photos: ProjectDetailPhoto[];
   materials: ProjectDetailMaterial[];
@@ -64,6 +76,15 @@ type DetailMaterialRow = {
   created_at: string;
 };
 
+type DetailPatternOptionRow = {
+  id: string;
+  url: string | null;
+  photo_url: string | null;
+  comment: string | null;
+  is_selected: boolean | null;
+  created_at: string;
+};
+
 type DetailNoteRow = {
   id: string;
   stage: Stage;
@@ -80,6 +101,7 @@ export type ProjectDetailRow = {
   pattern_file_url: string | null;
   project_photos: DetailPhotoRow[] | null;
   project_materials: DetailMaterialRow[] | null;
+  pattern_options: DetailPatternOptionRow[] | null;
   project_notes: DetailNoteRow[] | null;
 };
 
@@ -97,6 +119,9 @@ function byCreatedAtDesc(
 export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
   const photoRows = [...(row.project_photos ?? [])].sort(byCreatedAtDesc);
   const materialRows = [...(row.project_materials ?? [])].sort(byCreatedAtAsc);
+  const patternOptionRows = [...(row.pattern_options ?? [])].sort(
+    byCreatedAtAsc,
+  );
   const noteRows = [...(row.project_notes ?? [])].sort(byCreatedAtAsc);
 
   return {
@@ -106,6 +131,14 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
     status: row.status,
     description: row.description,
     patternFileUrl: row.pattern_file_url,
+    pattern: derivePattern(patternOptionRows),
+    patternOptions: patternOptionRows.map((option) => ({
+      id: option.id,
+      url: option.url,
+      photoUrl: option.photo_url,
+      comment: option.comment,
+      isSelected: Boolean(option.is_selected),
+    })),
     primaryPhotoUrl: pickProjectPhotoUrl(photoRows),
     photos: photoRows.map((photo) => ({
       id: photo.id,
@@ -160,6 +193,7 @@ export async function getProjectById(
       pattern_file_url,
       project_photos ( id, image_url, photo_type, is_primary, created_at ),
       project_materials ( id, name, url, photo_url, comment, is_selected, created_at ),
+      pattern_options ( id, url, photo_url, comment, is_selected, created_at ),
       project_notes ( id, stage, content, created_at )
     `,
     )

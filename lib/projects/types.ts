@@ -31,6 +31,13 @@ export type InsertProjectMaterialInput = {
   is_selected?: boolean;
 };
 
+/** A candidate pattern: a link and/or screenshot, with an optional comment. */
+export type PatternOptionInput = {
+  url?: string | null;
+  photo_url?: string | null;
+  comment?: string | null;
+};
+
 export type UpdateProjectInput = {
   pattern_file_url?: string | null;
   title?: string;

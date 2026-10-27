@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
+import { PatternOptions } from "@/components/project/pattern-options";
 import { ProjectNotes } from "@/components/project/project-notes";
 import { ProjectPhotos } from "@/components/project/project-photos";
 import { ThemedText } from "@/components/themed-text";
@@ -205,6 +206,25 @@ export default function ProjectDetailScreen() {
     pattern: (
       <View key="pattern" style={styles.section}>
         <ThemedText type="smallBold">Pattern</ThemedText>
+        {project.pattern?.url ? (
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => {
+              void Linking.openURL(project.pattern!.url!);
+            }}
+          >
+            <ThemedText type="linkPrimary">Open pattern</ThemedText>
+          </Pressable>
+        ) : project.pattern ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            The chosen Pattern Option has no link.
+          </ThemedText>
+        ) : (
+          <ThemedText type="small" themeColor="textSecondary">
+            No Pattern yet. Choose one of the Pattern Options below.
+          </ThemedText>
+        )}
+        {/* Uploaded by the old wizard; replaced by Pattern Files */}
         {project.patternFileUrl ? (
           <Pressable
             accessibilityRole="link"
@@ -212,13 +232,17 @@ export default function ProjectDetailScreen() {
               void Linking.openURL(project.patternFileUrl!);
             }}
           >
-            <ThemedText type="linkPrimary">Open pattern</ThemedText>
+            <ThemedText type="linkPrimary">Open pattern file</ThemedText>
           </Pressable>
-        ) : (
-          <ThemedText type="small" themeColor="textSecondary">
-            No pattern yet.
-          </ThemedText>
-        )}
+        ) : null}
+        <PatternOptions
+          project={project}
+          canChoose
+          disabled={busy}
+          onBusyChange={setSectionBusy}
+          onError={setActionError}
+          onChanged={reload}
+        />
       </View>
     ),
     materials: (
