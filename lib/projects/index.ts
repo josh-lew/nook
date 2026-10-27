@@ -15,6 +15,7 @@ export type {
   ProjectsSupabaseClient,
   ProjectsUpdateBuilder,
   Stage,
+  UpdateMaterialOptionInput,
   UpdateProjectInput,
   UploadFile,
   UploadsSupabaseClient,
@@ -35,6 +36,7 @@ export type {
 
 export type { IdeaListItem, IdeaListRow } from "./get-ideas";
 
+export { deleteMaterialOption } from "./delete-material-option";
 export { deletePatternFile } from "./delete-pattern-file";
 export { deleteProject } from "./delete-project";
 export { defaultPhotoType } from "./default-photo-type";
@@ -48,6 +50,7 @@ export { insertProjectNote } from "./insert-project-note";
 export { insertProjectPhoto } from "./insert-project-photo";
 export { insertProjectPhotos } from "./insert-project-photos";
 export { setPrimaryPhoto } from "./set-primary-photo";
+export { updateMaterialOption } from "./update-material-option";
 export { updateProject } from "./update-project";
 export {
   getProjectById,

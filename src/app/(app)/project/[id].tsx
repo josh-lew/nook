@@ -9,7 +9,6 @@ import { SymbolView } from "expo-symbols";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
+import { MaterialOptions } from "@/components/project/material-options";
 import { ProjectNotes } from "@/components/project/project-notes";
 import {
   OpenPatternButton,
@@ -217,51 +217,14 @@ export default function ProjectDetailScreen() {
       />
     ),
     materials: (
-      <View key="materials" style={styles.section}>
-        <ThemedText type="smallBold">Materials</ThemedText>
-        {project.materials.length === 0 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            No materials yet.
-          </ThemedText>
-        ) : null}
-        {project.materials.map((material) => (
-          <View
-            key={material.id}
-            style={[styles.materialRow, { backgroundColor: theme.surface }]}
-          >
-            {material.photoUrl ? (
-              <Image
-                source={{ uri: material.photoUrl }}
-                style={styles.materialThumb}
-                contentFit="cover"
-                accessibilityLabel={
-                  material.name ? `${material.name} photo` : "Material photo"
-                }
-              />
-            ) : null}
-            <View style={styles.materialBody}>
-              <ThemedText type="smallBold">
-                {material.name?.trim() || "Untitled material"}
-              </ThemedText>
-              {material.comment?.trim() ? (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {material.comment.trim()}
-                </ThemedText>
-              ) : null}
-              {material.url?.trim() ? (
-                <Pressable
-                  accessibilityRole="link"
-                  onPress={() => {
-                    void Linking.openURL(material.url!);
-                  }}
-                >
-                  <ThemedText type="linkPrimary">Open link</ThemedText>
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
-        ))}
-      </View>
+      <MaterialOptions
+        key="materials"
+        project={project}
+        disabled={busy}
+        onBusyChange={setSectionBusy}
+        onError={setActionError}
+        onChanged={reload}
+      />
     ),
     photos: (
       <ProjectPhotos
@@ -498,21 +461,6 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: Spacing.two,
-  },
-  materialRow: {
-    flexDirection: "row",
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-  },
-  materialThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: Spacing.one,
-  },
-  materialBody: {
-    flex: 1,
-    gap: Spacing.half,
   },
   deleteBtn: {
     alignItems: "center",
