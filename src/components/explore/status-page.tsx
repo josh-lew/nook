@@ -26,6 +26,7 @@ import {
   getProjectsByStatus,
   type ProjectListItem,
   type Stage,
+  type StageList,
 } from "../../../lib/projects";
 
 type StatusPageProps = {
@@ -50,6 +51,8 @@ const PREVIOUS_STAGE: Partial<Record<ProjectCategory, Stage>> = {
   completed: "in_progress",
 };
 
+const EMPTY_LIST: StageList = { active: [], paused: [] };
+
 const EMPTY_COPY: Record<ProjectCategory, string> = {
   planning: "No planning projects yet — tap + to add one",
   inProgress: "No in-progress projects yet — tap + to add one",
@@ -68,7 +71,7 @@ export function StatusPage({
   const theme = useTheme();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
-  const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [projects, setProjects] = useState<StageList>(EMPTY_LIST);
   const [movableProjects, setMovableProjects] = useState<MovableProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,13 +87,13 @@ export function StatusPage({
     const result = await getProjectsByStatus(stage);
 
     if (result.error) {
-      setProjects([]);
+      setProjects(EMPTY_LIST);
       setError(result.error);
       setLoading(false);
       return;
     }
 
-    setProjects(result.data ?? []);
+    setProjects(result.data ?? EMPTY_LIST);
     setLoading(false);
   }, [stage]);
 
@@ -126,8 +129,9 @@ export function StatusPage({
         return;
       }
 
+      // A Paused Project can be completed too
       setMovableProjects(
-        result.data.map((project) => ({
+        [...result.data.active, ...result.data.paused].map((project) => ({
           id: project.id,
           title: project.title,
         })),
@@ -146,6 +150,13 @@ export function StatusPage({
     router.push({
       pathname: "/add-project",
       params: { status: stage },
+    });
+  };
+
+  const openProject = (project: ProjectListItem) => {
+    router.push({
+      pathname: "/project/[id]",
+      params: { id: project.id },
     });
   };
 
@@ -234,7 +245,10 @@ export function StatusPage({
           </View>
         ) : null}
 
-        {!loading && !error && projects.length === 0 ? (
+        {!loading &&
+        !error &&
+        projects.active.length === 0 &&
+        projects.paused.length === 0 ? (
           <View style={styles.state}>
             <ThemedText themeColor="textSecondary" style={styles.stateText}>
               {EMPTY_COPY[category]}
@@ -242,18 +256,28 @@ export function StatusPage({
           </View>
         ) : null}
 
-        {!loading && !error && projects.length > 0 ? (
+        {!loading && !error && projects.active.length > 0 ? (
           <View style={styles.list}>
-            {projects.map((project) => (
+            {projects.active.map((project) => (
               <ProjectCard
                 key={project.id}
                 project={project}
-                onPress={() => {
-                  router.push({
-                    pathname: "/project/[id]",
-                    params: { id: project.id },
-                  });
-                }}
+                onPress={() => openProject(project)}
+              />
+            ))}
+          </View>
+        ) : null}
+
+        {!loading && !error && projects.paused.length > 0 ? (
+          <View style={styles.list}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              Paused
+            </ThemedText>
+            {projects.paused.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onPress={() => openProject(project)}
               />
             ))}
           </View>

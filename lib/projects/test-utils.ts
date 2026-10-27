@@ -126,6 +126,8 @@ function createUpdateBuilder(
       onUpdate?.(values, column, ids);
       return filters.in(column, ids);
     },
+    is: filters.is,
+    not: filters.not,
     select: () => {
       const selected = () =>
         Promise.resolve({

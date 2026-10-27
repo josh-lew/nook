@@ -78,6 +78,8 @@ export async function changeStage(
       .select("plan_order")
       .eq("user_id", user.id)
       .eq("status", to)
+      // Paused In progress Projects have their own ranking
+      .is("paused_at", null)
       .is("deleted_at", null);
 
     if (rankError) {
@@ -92,6 +94,8 @@ export async function changeStage(
     .update({
       status: to,
       plan_order: planOrder,
+      // Every move lands active: completing a Paused Project clears Paused
+      paused_at: null,
       // completed_at is set and cleared by a trigger (12_completed_at.sql) on the database clock
     })
     .eq("id", projectId)

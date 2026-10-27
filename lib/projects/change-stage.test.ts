@@ -22,10 +22,18 @@ describe("changeStage", () => {
     const result = await changeStage("project-1", "in_progress", client);
 
     expect(result).toEqual({ data: null, error: null });
+    // Paused Projects have their own ranking, so only active ones count
+    expect(client.calls[1]).toMatchObject({
+      kind: "select",
+      filters: expect.arrayContaining([
+        { method: "eq", column: "status", value: "in_progress" },
+        { method: "is", column: "paused_at", value: null },
+      ]),
+    });
     expect(updateCall(client)).toEqual({
       table: "projects",
       kind: "update",
-      values: { status: "in_progress", plan_order: 8 },
+      values: { status: "in_progress", plan_order: 8, paused_at: null },
       filters: [
         { method: "eq", column: "id", value: "project-1" },
         { method: "eq", column: "user_id", value: "user-1" },
@@ -48,6 +56,7 @@ describe("changeStage", () => {
     expect(updateCall(client)?.values).toEqual({
       status: "in_progress",
       plan_order: 0,
+      paused_at: null,
     });
     expect(updateCall(client)?.filters).toContainEqual({
       method: "eq",
@@ -178,12 +187,29 @@ describe("changeStage", () => {
         kind: "update",
         // Completed is ordered by completion date, not a manual rank; the date
         // comes from the database clock, so it is never sent from the device
-        values: { status: "completed", plan_order: null },
+        values: { status: "completed", plan_order: null, paused_at: null },
         filters: [
           { method: "eq", column: "id", value: "project-1" },
           { method: "eq", column: "user_id", value: "user-1" },
           { method: "eq", column: "status", value: "in_progress" },
         ],
+      });
+    });
+
+    it("clears Paused when a Paused Project is completed", async () => {
+      const client = createMockProjectsClient({
+        queryResult: {
+          data: { status: "in_progress", paused_at: "2026-10-01T00:00:00Z" },
+          error: null,
+        },
+      });
+
+      const result = await changeStage("project-1", "completed", client);
+
+      expect(result).toEqual({ data: null, error: null });
+      expect(updateCall(client)?.values).toMatchObject({
+        status: "completed",
+        paused_at: null,
       });
     });
   });

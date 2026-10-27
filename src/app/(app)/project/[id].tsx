@@ -27,6 +27,7 @@ import {
   ProjectPattern,
 } from "@/components/project/project-pattern";
 import { ProjectPhotos } from "@/components/project/project-photos";
+import { PauseSheet } from "@/components/project/pause-sheet";
 import { ProjectSeed } from "@/components/project/project-seed";
 import {
   StagePrompt,
@@ -41,6 +42,8 @@ import {
   changeStage,
   deleteProject,
   getProjectById,
+  pauseProject,
+  resumeProject,
   updateProject,
   type HobbyType,
   type ProjectDetail,
@@ -88,8 +91,10 @@ export default function ProjectDetailScreen() {
   const [deleting, setDeleting] = useState(false);
   const [moving, setMoving] = useState(false);
   const [stagePrompt, setStagePrompt] = useState<StagePromptKind | null>(null);
+  const [pauseSheetVisible, setPauseSheetVisible] = useState(false);
+  const [pausing, setPausing] = useState(false);
 
-  const busy = saving || sectionBusy || deleting || moving;
+  const busy = saving || sectionBusy || deleting || moving || pausing;
 
   /** Reloads the Project. With `resetFields`, the form takes the saved values too. */
   const load = useCallback(
@@ -182,6 +187,39 @@ export default function ProjectDetailScreen() {
       setStagePrompt(action.prompt);
     }
     setMoving(false);
+  };
+
+  const handlePause = async (note: string) => {
+    if (!project) {
+      return;
+    }
+
+    setActionError(null);
+    setPausing(true);
+    const result = await pauseProject(project.id, note);
+    if (result.error) {
+      setActionError(result.error);
+    }
+    // Reload either way: a failed note still leaves the Project Paused
+    await reload();
+    setPausing(false);
+    setPauseSheetVisible(false);
+  };
+
+  const handleResume = async () => {
+    if (!project) {
+      return;
+    }
+
+    setActionError(null);
+    setPausing(true);
+    const result = await resumeProject(project.id);
+    if (result.error) {
+      setActionError(result.error);
+    } else {
+      await reload();
+    }
+    setPausing(false);
   };
 
   const handleDelete = async () => {
@@ -325,9 +363,45 @@ export default function ProjectDetailScreen() {
         </View>
 
         <View style={styles.stageRow}>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText
+            type="small"
+            themeColor="textSecondary"
+            style={styles.stageLabel}
+          >
             {STAGE_LABELS[stage]}
+            {project.paused ? " · Paused" : ""}
           </ThemedText>
+          {stage === "in_progress" ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                project.paused ? "Resume project" : "Pause project"
+              }
+              disabled={busy}
+              onPress={() => {
+                if (project.paused) {
+                  void handleResume();
+                } else {
+                  setPauseSheetVisible(true);
+                }
+              }}
+              style={({ pressed }) => [
+                styles.stageBtn,
+                styles.pauseBtn,
+                { borderColor: theme.border },
+                pressed && styles.pressed,
+                busy && styles.disabled,
+              ]}
+            >
+              {pausing && project.paused ? (
+                <ActivityIndicator color={theme.textPrimary} />
+              ) : (
+                <ThemedText type="smallBold">
+                  {project.paused ? "Resume" : "Pause"}
+                </ThemedText>
+              )}
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${stageAction.label} project`}
@@ -478,6 +552,15 @@ export default function ProjectDetailScreen() {
         onClose={() => setStagePrompt(null)}
         onChanged={reload}
       />
+
+      <PauseSheet
+        visible={pauseSheetVisible}
+        pausing={pausing}
+        onCancel={() => setPauseSheetVisible(false)}
+        onPause={(note) => {
+          void handlePause(note);
+        }}
+      />
     </ThemedView>
   );
 }
@@ -522,6 +605,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  stageLabel: {
+    flex: 1,
+  },
   stageBtn: {
     minWidth: 88,
     alignItems: "center",
@@ -529,6 +615,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.two,
+  },
+  pauseBtn: {
+    marginRight: Spacing.two,
+    borderWidth: 1,
   },
   field: {
     gap: Spacing.one,

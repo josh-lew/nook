@@ -71,6 +71,8 @@ export type ProjectDetail = {
   notes: ProjectDetailNote[];
   /** When it entered Completed; null in any other Stage. */
   completedAt: string | null;
+  /** An In progress Project the maker has put down for now. */
+  paused: boolean;
 };
 
 type DetailPhotoRow = {
@@ -125,6 +127,7 @@ export type ProjectDetailRow = {
   promoted_at: string | null;
   seed_description: string | null;
   completed_at: string | null;
+  paused_at: string | null;
   project_photos: DetailPhotoRow[] | null;
   project_materials: DetailMaterialRow[] | null;
   pattern_options: DetailPatternOptionRow[] | null;
@@ -217,6 +220,7 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
       createdAt: note.created_at,
     })),
     completedAt: row.completed_at,
+    paused: row.paused_at !== null,
   };
 }
 
@@ -249,6 +253,7 @@ export async function getProjectById(
       promoted_at,
       seed_description,
       completed_at,
+      paused_at,
       project_photos ( id, image_url, stage, photo_type, is_primary, created_at ),
       project_materials ( id, name, url, photo_url, comment, is_selected, created_at ),
       pattern_options ( id, url, photo_url, comment, is_selected, created_at ),
