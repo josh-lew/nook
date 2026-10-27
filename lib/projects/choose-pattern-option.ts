@@ -30,6 +30,23 @@ export async function choosePatternOption(
     return { data: null, error: "Only a Project can have a Pattern." };
   }
 
+  if (optionId !== null) {
+    // Check first, so a stale or foreign option can't clear the current Pattern
+    const { data: owned, error: ownedError } = await client
+      .from("pattern_options")
+      .select("id")
+      .eq("id", optionId)
+      .eq("project_id", projectId);
+
+    if (ownedError) {
+      return { data: null, error: ownedError.message };
+    }
+
+    if (!(owned as { id: string }[] | null)?.length) {
+      return { data: null, error: "That Pattern Option couldn't be chosen." };
+    }
+  }
+
   // At most one option is selected per project, so clear before selecting
   const { error: clearError } = await client
     .from("pattern_options")
@@ -45,20 +62,14 @@ export async function choosePatternOption(
     return { data: null, error: null };
   }
 
-  const { data: chosen, error: selectError } = await client
+  const { error: selectError } = await client
     .from("pattern_options")
     .update({ is_selected: true })
     .eq("id", optionId)
-    .eq("project_id", projectId)
-    .select("id")
-    .single();
+    .eq("project_id", projectId);
 
   if (selectError) {
     return { data: null, error: selectError.message };
-  }
-
-  if (!chosen?.id) {
-    return { data: null, error: "That Pattern Option couldn't be chosen." };
   }
 
   return { data: null, error: null };

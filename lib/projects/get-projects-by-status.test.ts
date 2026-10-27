@@ -17,6 +17,7 @@ const sampleRow: ProjectListRow = {
   title: "Scarf",
   hobby_type: "knit",
   status: "planning",
+  pattern_file_url: null,
   created_at: "2026-01-02T00:00:00Z",
   plan_order: null,
   project_photos: [
@@ -146,6 +147,16 @@ describe("mapProjectListRow", () => {
     expect(
       mapProjectListRow({ ...sampleRow, pattern_options: null }).hasPattern,
     ).toBe(false);
+  });
+
+  it("still counts a pattern file from the old wizard until Pattern Files replace it", () => {
+    expect(
+      mapProjectListRow({
+        ...sampleRow,
+        pattern_file_url: "https://example.com/pattern.pdf",
+        pattern_options: [],
+      }).hasPattern,
+    ).toBe(true);
   });
 
   it("uses the primary photo when present", () => {

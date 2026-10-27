@@ -43,6 +43,8 @@ export type ProjectListRow = {
   title: string;
   hobby_type: HobbyType;
   status: Stage;
+  /** Old wizard upload; dropped once Pattern Files replace it. */
+  pattern_file_url: string | null;
   created_at: string;
   plan_order: number | null;
   project_photos: NestedPhoto[] | null;
@@ -108,7 +110,9 @@ export function mapProjectListRow(row: ProjectListRow): ProjectListItem {
     hobbyType: row.hobby_type,
     stage: row.status,
     photoUrl: pickProjectPhotoUrl(row.project_photos),
-    hasPattern: derivePattern(row.pattern_options) !== null,
+    hasPattern:
+      derivePattern(row.pattern_options) !== null ||
+      Boolean(row.pattern_file_url),
     hasMaterial: Boolean(row.project_materials?.length),
     materialName: pickMaterialName(row.project_materials),
     createdAt: row.created_at,
@@ -140,6 +144,7 @@ export async function getProjectsByStatus(
       title,
       hobby_type,
       status,
+      pattern_file_url,
       created_at,
       plan_order,
       project_photos ( id, image_url, created_at, is_primary ),

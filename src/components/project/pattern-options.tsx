@@ -72,13 +72,19 @@ export function PatternOptions({
 
   const locked = disabled || busy;
 
-  const run = async (work: () => Promise<boolean>) => {
+  /** Runs a write with the section busy, reports its error, then reloads; success closes the form. */
+  const runWrite = async (
+    write: () => Promise<{ error: string | null }>,
+  ) => {
     onError(null);
     setBusy(true);
     onBusyChange(true);
-    const succeeded = await work();
+    const { error } = await write();
+    if (error) {
+      onError(error);
+    }
     await onChanged();
-    if (succeeded) {
+    if (!error) {
       setDraft(null);
     }
     setBusy(false);
@@ -108,7 +114,7 @@ export function PatternOptions({
   };
 
   const saveDraft = async (current: Draft) => {
-    await run(async () => {
+    await runWrite(async () => {
       let photoUrl: string | null = null;
       if (current.screenshot?.kind === "saved") {
         photoUrl = current.screenshot.url;
@@ -121,8 +127,7 @@ export function PatternOptions({
           base64: asset.base64 ?? undefined,
         });
         if (upload.error || !upload.data) {
-          onError(`The screenshot didn’t upload: ${upload.error}`);
-          return false;
+          return { error: `The screenshot didn’t upload: ${upload.error}` };
         }
         photoUrl = upload.data.url;
       }
@@ -132,14 +137,9 @@ export function PatternOptions({
         photo_url: photoUrl,
         comment: current.comment,
       };
-      const result = current.optionId
-        ? await updatePatternOption(current.optionId, input)
-        : await insertPatternOption(project.id, input);
-      if (result.error) {
-        onError(result.error);
-        return false;
-      }
-      return true;
+      return current.optionId
+        ? updatePatternOption(current.optionId, input)
+        : insertPatternOption(project.id, input);
     });
   };
 
@@ -154,25 +154,11 @@ export function PatternOptions({
       return;
     }
 
-    await run(async () => {
-      const result = await deletePatternOption(option.id);
-      if (result.error) {
-        onError(result.error);
-        return false;
-      }
-      return true;
-    });
+    await runWrite(() => deletePatternOption(option.id));
   };
 
   const choose = async (optionId: string | null) => {
-    await run(async () => {
-      const result = await choosePatternOption(project.id, optionId);
-      if (result.error) {
-        onError(result.error);
-        return false;
-      }
-      return true;
-    });
+    await runWrite(() => choosePatternOption(project.id, optionId));
   };
 
   const renderDraft = (current: Draft) => {

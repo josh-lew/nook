@@ -6,10 +6,14 @@ jest.mock("../supabase", () => ({
 }));
 
 const planningProject = { data: { status: "planning" }, error: null };
+const optionFound = { data: [{ id: "option-2" }], error: null };
+const optionMissing = { data: [], error: null };
 
 describe("choosePatternOption", () => {
   it("selects the option as the Project's Pattern", async () => {
-    const client = createMockProjectsClient({ queryResult: planningProject });
+    const client = createMockProjectsClient({
+      queryResults: [planningProject, optionFound],
+    });
 
     const result = await choosePatternOption("project-1", "option-2", client);
 
@@ -59,7 +63,7 @@ describe("choosePatternOption", () => {
     // Stand-in for the table: option-1 is the current Pattern
     const selected = new Set(["option-1"]);
     const client = createMockProjectsClient({
-      queryResult: planningProject,
+      queryResults: [planningProject, optionFound],
       onUpdate: (values, column, value) => {
         const { is_selected } = values as { is_selected: boolean };
         if (column === "is_selected") {
@@ -90,10 +94,9 @@ describe("choosePatternOption", () => {
     expect(client.calls.some((call) => call.kind === "update")).toBe(false);
   });
 
-  it("reports when the option isn't one of the Project's", async () => {
+  it("keeps the current Pattern when the option isn't one of the Project's", async () => {
     const client = createMockProjectsClient({
-      queryResult: planningProject,
-      insertResult: { data: null, error: null },
+      queryResults: [planningProject, optionMissing],
     });
 
     const result = await choosePatternOption("project-1", "other", client);
@@ -102,11 +105,12 @@ describe("choosePatternOption", () => {
       data: null,
       error: "That Pattern Option couldn't be chosen.",
     });
+    expect(client.calls.some((call) => call.kind === "update")).toBe(false);
   });
 
   it("returns an error when clearing the earlier choice fails", async () => {
     const client = createMockProjectsClient({
-      queryResult: planningProject,
+      queryResults: [planningProject, optionFound],
       updateResults: [{ data: null, error: { message: "clear failed" } }],
     });
 

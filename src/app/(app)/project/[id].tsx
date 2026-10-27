@@ -201,16 +201,17 @@ export default function ProjectDetailScreen() {
   }
 
   const stage = project.status;
+  const patternUrl = project.pattern?.url;
 
   const sections: Record<Section, ReactNode> = {
     pattern: (
       <View key="pattern" style={styles.section}>
         <ThemedText type="smallBold">Pattern</ThemedText>
-        {project.pattern?.url ? (
+        {patternUrl ? (
           <Pressable
             accessibilityRole="link"
             onPress={() => {
-              void Linking.openURL(project.pattern!.url!);
+              void Linking.openURL(patternUrl);
             }}
           >
             <ThemedText type="linkPrimary">Open pattern</ThemedText>
