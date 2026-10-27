@@ -13,3 +13,5 @@
 - [ ] Stage list query returns active and Paused groups for In progress; the page renders both sections
 - [ ] Pause/Resume actions on the Project screen, with a skippable note sheet on Pause
 - [ ] Data-layer tests cover validity, note writing, ranking placement and grouping
+
+**Note from 09:** `changeStage` ranks a Project entering In progress (Start or Reopen) against every In progress row. Once Paused exists, rank it against active (not Paused) In progress Projects only.

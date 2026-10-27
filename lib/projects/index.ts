@@ -40,6 +40,7 @@ export type {
 
 export type { IdeaListItem, IdeaListRow } from "./get-ideas";
 
+export { changeStage } from "./change-stage";
 export { choosePatternOption } from "./choose-pattern-option";
 export { deleteMaterialOption } from "./delete-material-option";
 export { deletePatternFile } from "./delete-pattern-file";

@@ -28,12 +28,17 @@ import {
 } from "@/components/project/project-pattern";
 import { ProjectPhotos } from "@/components/project/project-photos";
 import { ProjectSeed } from "@/components/project/project-seed";
+import {
+  StagePrompt,
+  type StagePromptKind,
+} from "@/components/project/stage-prompt";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { STAGE_LABELS } from "@/constants/stages";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {
+  changeStage,
   deleteProject,
   getProjectById,
   updateProject,
@@ -49,6 +54,16 @@ const SECTION_ORDER: Record<Stage, Section[]> = {
   planning: ["pattern", "materials", "photos", "notes"],
   in_progress: ["pattern", "photos", "notes", "materials"],
   completed: ["photos", "notes", "pattern", "materials"],
+};
+
+/** The one move each Stage offers, and the skippable prompt shown after it. */
+const STAGE_ACTIONS: Record<
+  Stage,
+  { label: string; to: Stage; prompt: StagePromptKind | null }
+> = {
+  planning: { label: "Start", to: "in_progress", prompt: "start" },
+  in_progress: { label: "Complete", to: "completed", prompt: "complete" },
+  completed: { label: "Reopen", to: "in_progress", prompt: null },
 };
 
 export default function ProjectDetailScreen() {
@@ -71,8 +86,10 @@ export default function ProjectDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [sectionBusy, setSectionBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [stagePrompt, setStagePrompt] = useState<StagePromptKind | null>(null);
 
-  const busy = saving || sectionBusy || deleting;
+  const busy = saving || sectionBusy || deleting || moving;
 
   /** Reloads the Project. With `resetFields`, the form takes the saved values too. */
   const load = useCallback(
@@ -148,6 +165,25 @@ export default function ProjectDetailScreen() {
     setSaving(false);
   };
 
+  const handleStageChange = async () => {
+    if (!project || project.status === "idea") {
+      return;
+    }
+
+    const action = STAGE_ACTIONS[project.status];
+    setActionError(null);
+    setMoving(true);
+    const result = await changeStage(project.id, action.to);
+    if (result.error) {
+      setActionError(result.error);
+    } else {
+      await reload();
+      // The move is already saved, so the prompt only ever adds to it
+      setStagePrompt(action.prompt);
+    }
+    setMoving(false);
+  };
+
   const handleDelete = async () => {
     if (!project) {
       return;
@@ -206,6 +242,7 @@ export default function ProjectDetailScreen() {
   }
 
   const stage = project.status;
+  const stageAction = STAGE_ACTIONS[stage];
 
   const sections: Record<Section, ReactNode> = {
     pattern: (
@@ -287,9 +324,33 @@ export default function ProjectDetailScreen() {
           )}
         </View>
 
-        <ThemedText type="small" themeColor="textSecondary">
-          {STAGE_LABELS[stage]}
-        </ThemedText>
+        <View style={styles.stageRow}>
+          <ThemedText type="small" themeColor="textSecondary">
+            {STAGE_LABELS[stage]}
+          </ThemedText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${stageAction.label} project`}
+            disabled={busy}
+            onPress={() => {
+              void handleStageChange();
+            }}
+            style={({ pressed }) => [
+              styles.stageBtn,
+              { backgroundColor: theme.primary },
+              pressed && styles.pressed,
+              busy && styles.disabled,
+            ]}
+          >
+            {moving ? (
+              <ActivityIndicator color={theme.onPrimary} />
+            ) : (
+              <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
+                {stageAction.label}
+              </ThemedText>
+            )}
+          </Pressable>
+        </View>
 
         {stage === "in_progress" && project.pattern ? (
           <OpenPatternButton pattern={project.pattern} />
@@ -410,6 +471,13 @@ export default function ProjectDetailScreen() {
           )}
         </Pressable>
       </ScrollView>
+
+      <StagePrompt
+        kind={stagePrompt}
+        project={project}
+        onClose={() => setStagePrompt(null)}
+        onChanged={reload}
+      />
     </ThemedView>
   );
 }
@@ -448,6 +516,19 @@ const styles = StyleSheet.create({
   heroImage: {
     width: "100%",
     height: "100%",
+  },
+  stageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  stageBtn: {
+    minWidth: 88,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Spacing.two,
   },
   field: {
     gap: Spacing.one,

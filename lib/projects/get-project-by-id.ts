@@ -69,6 +69,8 @@ export type ProjectDetail = {
   photos: ProjectDetailPhoto[];
   materials: ProjectDetailMaterial[];
   notes: ProjectDetailNote[];
+  /** When it entered Completed; null in any other Stage. */
+  completedAt: string | null;
 };
 
 type DetailPhotoRow = {
@@ -122,6 +124,7 @@ export type ProjectDetailRow = {
   description: string | null;
   promoted_at: string | null;
   seed_description: string | null;
+  completed_at: string | null;
   project_photos: DetailPhotoRow[] | null;
   project_materials: DetailMaterialRow[] | null;
   pattern_options: DetailPatternOptionRow[] | null;
@@ -213,6 +216,7 @@ export function mapProjectDetailRow(row: ProjectDetailRow): ProjectDetail {
       content: note.content,
       createdAt: note.created_at,
     })),
+    completedAt: row.completed_at,
   };
 }
 
@@ -244,6 +248,7 @@ export async function getProjectById(
       description,
       promoted_at,
       seed_description,
+      completed_at,
       project_photos ( id, image_url, stage, photo_type, is_primary, created_at ),
       project_materials ( id, name, url, photo_url, comment, is_selected, created_at ),
       pattern_options ( id, url, photo_url, comment, is_selected, created_at ),

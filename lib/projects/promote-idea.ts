@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { nextRank } from "./next-rank";
 import type {
   DataResult,
   ProjectStatus,
@@ -63,18 +64,13 @@ export async function promoteIdea(
     return { data: null, error: rankError.message };
   }
 
-  const ranks = ((rankRows ?? []) as { plan_order: number | null }[])
-    .map((rankRow) => rankRow.plan_order)
-    .filter((rank): rank is number => rank !== null);
-  const nextRank = ranks.length > 0 ? Math.max(...ranks) + 1 : 0;
-
   const { data: promoted, error } = await client
     .from("projects")
     .update({
       // promoted_at is stamped by a trigger (11_promote_ideas.sql) on the database clock
       status: "planning",
       seed_description: row.description,
-      plan_order: nextRank,
+      plan_order: nextRank(rankRows),
     })
     .eq("id", ideaId)
     .eq("user_id", user.id)
