@@ -20,10 +20,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { confirmDelete } from "@/components/confirm-delete";
 import { HobbyPicker } from "@/components/ideas/hobby-picker";
-import { ProjectNotes, STAGE_LABELS } from "@/components/project/project-notes";
+import { ProjectNotes } from "@/components/project/project-notes";
 import { ProjectPhotos } from "@/components/project/project-photos";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { STAGE_LABELS } from "@/constants/stages";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {

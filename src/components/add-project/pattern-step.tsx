@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 
 import {
-  defaultPhotoTypeForStage,
   type AdditionalPhotoDraft,
   type ProjectPhotoType,
 } from "@/components/add-project/photo-type";
@@ -12,7 +11,11 @@ import { PhotoTypeToggle } from "@/components/add-project/photo-type-toggle";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
-import type { Stage, UploadFile } from "../../../lib/projects";
+import {
+  defaultPhotoType,
+  type Stage,
+  type UploadFile,
+} from "../../../lib/projects";
 
 type PatternStepProps = {
   stage: Stage;
@@ -82,7 +85,7 @@ export function PatternStep({
       return;
     }
 
-    const defaultType = defaultPhotoTypeForStage(stage);
+    const defaultType = defaultPhotoType(stage);
     const next: AdditionalPhotoDraft[] = result.assets.map((asset, index) => ({
       id: `${Date.now()}-${index}`,
       file: {

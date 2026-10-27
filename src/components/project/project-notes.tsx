@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
+import { STAGE_LABELS } from "@/constants/stages";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -15,12 +16,6 @@ import {
   type ProjectDetail,
   type Stage,
 } from "../../../lib/projects";
-
-export const STAGE_LABELS: Record<Stage, string> = {
-  planning: "Planning",
-  in_progress: "In Progress",
-  completed: "Completed",
-};
 
 function formatDate(iso: string): string {
   const date = new Date(iso);

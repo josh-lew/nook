@@ -13,6 +13,7 @@ import {
   setPrimaryPhoto,
   uploadProjectPhoto,
   type InsertProjectPhotoArgs,
+  type PhotoType,
   type ProjectDetail,
   type Stage,
 } from "../../../lib/projects";
@@ -25,7 +26,7 @@ const PHOTO_TYPE_OPTIONS: { value: AddablePhotoType; label: string }[] = [
   { value: "finished", label: "Finished" },
 ];
 
-const PHOTO_TYPE_LABELS: Record<string, string> = {
+const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   inspiration: "Inspiration",
   material: "Material",
   progress: "Progress",
@@ -56,6 +57,13 @@ export function ProjectPhotos({
     defaultPhotoType(stage),
   );
   const [busy, setBusy] = useState(false);
+
+  // Lead with the photos the current Stage is about, e.g. finished ones once Completed
+  const leadType = defaultPhotoType(stage);
+  const photos = [...project.photos].sort(
+    (a, b) =>
+      Number(b.photoType === leadType) - Number(a.photoType === leadType),
+  );
 
   const run = async (work: () => Promise<void>) => {
     onError(null);
@@ -129,8 +137,9 @@ export function ProjectPhotos({
       ) : null}
 
       <View style={styles.grid}>
-        {project.photos.map((photo) => {
-          const isCover = photo.imageUrl === project.primaryPhotoUrl;
+        {photos.map((photo) => {
+          // Only a saved cover counts; the hero's newest-photo fallback can still be pinned
+          const isCover = photo.isPrimary;
           return (
             <Pressable
               key={photo.id}
