@@ -360,6 +360,11 @@ export function MaterialOptions({
                   </ThemedText>
                 </View>
               ) : null}
+              {material.fromIdea ? (
+                <ThemedText type="small" themeColor="textSecondary">
+                  From the Idea
+                </ThemedText>
+              ) : null}
               {material.name?.trim() ? (
                 <ThemedText type="smallBold">{material.name.trim()}</ThemedText>
               ) : null}

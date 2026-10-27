@@ -6,6 +6,9 @@ export type Stage = "planning" | "in_progress" | "completed";
 /** The stored `projects.status`: a Project's Stage, or `idea` for an Idea. */
 export type ProjectStatus = "idea" | Stage;
 
+/** A photo's stage: `idea` marks an Idea's photos, which become the Seed when Promoted. */
+export type PhotoStage = "idea" | Stage;
+
 export type DataResult<T> =
   | { data: T; error: null }
   | { data: null; error: string };
@@ -64,7 +67,7 @@ export type PhotoType = "inspiration" | "material" | "progress" | "finished";
 
 export type InsertProjectPhotoInput = {
   image_url: string;
-  stage?: Stage;
+  stage?: PhotoStage;
   photo_type?: PhotoType;
   is_primary?: boolean;
 };
@@ -72,7 +75,7 @@ export type InsertProjectPhotoInput = {
 /** Singular insert: photo_type is required; no inference in the data layer. */
 export type InsertProjectPhotoArgs = {
   image_url: string;
-  stage: Stage;
+  stage: PhotoStage;
   photo_type: "inspiration" | "progress" | "finished";
   is_primary?: boolean;
 };

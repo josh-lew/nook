@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Schema script: `seed_description` and `promoted_at` columns; `idea` added to the photo stage check
-- [ ] Ideas' photos are stored with stage `idea` (update quick capture and the Idea screen accordingly)
-- [ ] `promoteIdea(id)` rejects non-Ideas, sets status to Planning, `promoted_at`, `seed_description`, and bottom rank
-- [ ] Project detail returns the Seed only for Promoted Projects, and a from-Idea flag on options (created before `promoted_at`)
-- [ ] Project screen shows the Seed box and "from idea" labels
-- [ ] Data-layer tests cover all promote rules and the detail mapping
+- [x] Schema script: `seed_description` and `promoted_at` columns; `idea` added to the photo stage check
+- [x] Ideas' photos are stored with stage `idea` (update quick capture and the Idea screen accordingly)
+- [x] `promoteIdea(id)` rejects non-Ideas, sets status to Planning, `promoted_at`, `seed_description`, and bottom rank
+- [x] Project detail returns the Seed only for Promoted Projects, and a from-Idea flag on options (created before `promoted_at`)
+- [x] Project screen shows the Seed box and "from idea" labels
+- [x] Data-layer tests cover all promote rules and the detail mapping

@@ -123,8 +123,8 @@ export default function CaptureIdeaScreen() {
           ? uploadResult
           : await insertProjectPhoto(ideaId, {
               image_url: uploadResult.data.url,
-              // Ideas' photos move to the `idea` stage when Promote lands (ticket 08).
-              stage: "planning",
+              // An Idea's photos become its Seed when Promoted
+              stage: "idea",
               photo_type: "inspiration",
             });
 

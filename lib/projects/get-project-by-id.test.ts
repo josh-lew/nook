@@ -15,10 +15,13 @@ const sampleRow: ProjectDetailRow = {
   hobby_type: "knit",
   status: "in_progress",
   description: "Stripy, for winter",
+  promoted_at: null,
+  seed_description: null,
   project_photos: [
     {
       id: "ph1",
       image_url: "https://example.com/old.jpg",
+      stage: "planning",
       photo_type: "inspiration",
       is_primary: true,
       created_at: "2026-01-01T00:00:00Z",
@@ -26,6 +29,7 @@ const sampleRow: ProjectDetailRow = {
     {
       id: "ph2",
       image_url: "https://example.com/new.jpg",
+      stage: "in_progress",
       photo_type: "progress",
       is_primary: false,
       created_at: "2026-01-03T00:00:00Z",
@@ -157,6 +161,7 @@ describe("mapProjectDetailRow", () => {
         photoUrl: "https://example.com/screenshot.jpg",
         comment: null,
         isSelected: false,
+        fromIdea: false,
       },
       {
         id: "po2",
@@ -164,6 +169,7 @@ describe("mapProjectDetailRow", () => {
         photoUrl: null,
         comment: "Free on the blog",
         isSelected: true,
+        fromIdea: false,
       },
     ]);
     expect(detail.pattern).toEqual({
@@ -196,13 +202,19 @@ describe("mapProjectDetailRow", () => {
     expect(detail.pattern).toBeNull();
   });
 
-  it("falls back to latest photo when none is primary", () => {
-    const detail = mapProjectDetailRow({
+  describe("a Promoted Project", () => {
+    const promoted: ProjectDetailRow = {
       ...sampleRow,
+      status: "planning",
+      description: "Stripy, in the club colours",
+      // Promoted between the earlier and later option of each kind
+      promoted_at: "2026-01-01T12:00:00Z",
+      seed_description: "Stripy, for winter",
       project_photos: [
         {
-          id: "ph1",
-          image_url: "https://example.com/old.jpg",
+          id: "seed-ph",
+          image_url: "https://example.com/pinterest.jpg",
+          stage: "idea",
           photo_type: "inspiration",
           is_primary: false,
           created_at: "2026-01-01T00:00:00Z",
@@ -210,6 +222,107 @@ describe("mapProjectDetailRow", () => {
         {
           id: "ph2",
           image_url: "https://example.com/new.jpg",
+          stage: "planning",
+          photo_type: "inspiration",
+          is_primary: false,
+          created_at: "2026-01-03T00:00:00Z",
+        },
+      ],
+    };
+
+    it("keeps the Idea's photos and original description together as the Seed", () => {
+      const detail = mapProjectDetailRow(promoted);
+
+      expect(detail.seed).toEqual({
+        description: "Stripy, for winter",
+        photos: [
+          {
+            id: "seed-ph",
+            imageUrl: "https://example.com/pinterest.jpg",
+            photoType: "inspiration",
+            isPrimary: false,
+            createdAt: "2026-01-01T00:00:00Z",
+          },
+        ],
+      });
+      expect(detail.description).toBe("Stripy, in the club colours");
+    });
+
+    it("shows the Seed photos only in the Seed, but can still use one as the cover", () => {
+      const detail = mapProjectDetailRow({
+        ...promoted,
+        project_photos: promoted.project_photos!.map((photo) => ({
+          ...photo,
+          is_primary: photo.id === "seed-ph",
+        })),
+      });
+
+      expect(detail.photos.map((photo) => photo.id)).toEqual(["ph2"]);
+      expect(detail.primaryPhotoUrl).toBe("https://example.com/pinterest.jpg");
+    });
+
+    it("flags the options created before Promotion as from the Idea", () => {
+      const detail = mapProjectDetailRow(promoted);
+
+      expect(
+        detail.patternOptions.map(({ id, fromIdea }) => ({ id, fromIdea })),
+      ).toEqual([
+        { id: "po1", fromIdea: true },
+        { id: "po2", fromIdea: false },
+      ]);
+      expect(
+        detail.materials.map(({ id, fromIdea }) => ({ id, fromIdea })),
+      ).toEqual([
+        { id: "m1", fromIdea: true },
+        { id: "m2", fromIdea: false },
+      ]);
+    });
+  });
+
+  it("has no Seed and nothing from an Idea when created directly", () => {
+    const detail = mapProjectDetailRow(sampleRow);
+
+    expect(detail.seed).toBeNull();
+    expect(detail.patternOptions.every((option) => !option.fromIdea)).toBe(true);
+    expect(detail.materials.every((material) => !material.fromIdea)).toBe(true);
+  });
+
+  it("has no Seed while still an Idea, and shows the Idea's photos as its own", () => {
+    const detail = mapProjectDetailRow({
+      ...sampleRow,
+      status: "idea",
+      project_photos: [
+        {
+          id: "idea-ph",
+          image_url: "https://example.com/pinterest.jpg",
+          stage: "idea",
+          photo_type: "inspiration",
+          is_primary: false,
+          created_at: "2026-01-01T00:00:00Z",
+        },
+      ],
+    });
+
+    expect(detail.seed).toBeNull();
+    expect(detail.photos.map((photo) => photo.id)).toEqual(["idea-ph"]);
+  });
+
+  it("falls back to latest photo when none is primary", () => {
+    const detail = mapProjectDetailRow({
+      ...sampleRow,
+      project_photos: [
+        {
+          id: "ph1",
+          image_url: "https://example.com/old.jpg",
+          stage: "planning",
+          photo_type: "inspiration",
+          is_primary: false,
+          created_at: "2026-01-01T00:00:00Z",
+        },
+        {
+          id: "ph2",
+          image_url: "https://example.com/new.jpg",
+          stage: "in_progress",
           photo_type: "progress",
           is_primary: false,
           created_at: "2026-01-03T00:00:00Z",
