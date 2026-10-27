@@ -22,8 +22,8 @@ import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import {
+  changeStage,
   getProjectsByStatus,
-  updateProject,
   type ProjectListItem,
   type Stage,
 } from "../../../lib/projects";
@@ -155,7 +155,7 @@ export function StatusPage({
     }
 
     setMoving(true);
-    const result = await updateProject(project.id, { status: stage });
+    const result = await changeStage(project.id, stage);
     setMoving(false);
 
     if (result.error) {

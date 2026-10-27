@@ -17,6 +17,7 @@ const sampleRow: ProjectDetailRow = {
   description: "Stripy, for winter",
   promoted_at: null,
   seed_description: null,
+  completed_at: null,
   project_photos: [
     {
       id: "ph1",
@@ -305,6 +306,17 @@ describe("mapProjectDetailRow", () => {
 
     expect(detail.seed).toBeNull();
     expect(detail.photos.map((photo) => photo.id)).toEqual(["idea-ph"]);
+  });
+
+  it("exposes the completion date, or null when not Completed", () => {
+    expect(mapProjectDetailRow(sampleRow).completedAt).toBeNull();
+    expect(
+      mapProjectDetailRow({
+        ...sampleRow,
+        status: "completed",
+        completed_at: "2026-10-27T09:30:00Z",
+      }).completedAt,
+    ).toBe("2026-10-27T09:30:00Z");
   });
 
   it("falls back to latest photo when none is primary", () => {
