@@ -36,6 +36,7 @@ export type {
 export type {
   ProjectListItem,
   ProjectListRow,
+  StageList,
 } from "./get-projects-by-status";
 
 export type { IdeaListItem, IdeaListRow } from "./get-ideas";
@@ -57,7 +58,9 @@ export { insertProjectMaterials } from "./insert-project-materials";
 export { insertProjectNote } from "./insert-project-note";
 export { insertProjectPhoto } from "./insert-project-photo";
 export { insertProjectPhotos } from "./insert-project-photos";
+export { pauseProject } from "./pause-project";
 export { promoteIdea } from "./promote-idea";
+export { resumeProject } from "./resume-project";
 export { setPrimaryPhoto } from "./set-primary-photo";
 export { updateMaterialOption } from "./update-material-option";
 export { updatePatternOption } from "./update-pattern-option";

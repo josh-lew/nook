@@ -126,6 +126,8 @@ function createUpdateBuilder(
       onUpdate?.(values, column, ids);
       return filters.in(column, ids);
     },
+    is: filters.is,
+    not: filters.not,
     select: () => {
       const selected = () =>
         Promise.resolve({
@@ -144,6 +146,8 @@ export function createMockProjectsClient(options: {
   user?: { id: string } | null;
   userError?: { message: string } | null;
   insertResult?: InsertResult;
+  /** Result of `update(...).select(...)`; defaults to `insertResult`. */
+  updateSelectResult?: InsertResult;
   updateResult?: UpdateResult;
   /** Return a different result for each successive update call. */
   updateResults?: UpdateResult[];
@@ -206,7 +210,7 @@ export function createMockProjectsClient(options: {
           call,
           values,
           result,
-          insertResult,
+          options.updateSelectResult ?? insertResult,
           options.onUpdate,
         );
       },
@@ -234,4 +238,10 @@ export function createMockProjectsClient(options: {
       },
     }),
   } as MockProjectsClient;
+}
+
+/** The first update a test client saw, if any. */
+export function findUpdateCall(client: MockProjectsClient) {
+  const update = client.calls.find((call) => call.kind === "update");
+  return update?.kind === "update" ? update : undefined;
 }

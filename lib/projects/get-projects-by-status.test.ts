@@ -19,6 +19,7 @@ const sampleRow: ProjectListRow = {
   status: "planning",
   created_at: "2026-01-02T00:00:00Z",
   plan_order: null,
+  paused_at: null,
   pattern_files: [{ id: "f1" }],
   project_photos: [
     {
@@ -199,7 +200,8 @@ describe("getProjectsByStatus", () => {
     const result = await getProjectsByStatus("planning", client);
 
     expect(result.error).toBeNull();
-    expect(result.data).toEqual([
+    expect(result.data?.paused).toEqual([]);
+    expect(result.data?.active).toEqual([
       {
         id: "p1",
         title: "Scarf",
@@ -211,6 +213,59 @@ describe("getProjectsByStatus", () => {
         materialName: "Chosen yarn",
         createdAt: "2026-01-02T00:00:00Z",
       },
+    ]);
+  });
+
+  it("groups In progress into Active and Paused, each in rank order", async () => {
+    const row = (id: string, planOrder: number | null, pausedAt: string | null) => ({
+      ...sampleRow,
+      id,
+      status: "in_progress" as const,
+      plan_order: planOrder,
+      paused_at: pausedAt,
+    });
+    const client = createMockProjectsClient({
+      queryResult: {
+        data: [
+          row("unranked", null, null),
+          row("paused-second", 3, "2026-10-02T00:00:00Z"),
+          row("active-second", 5, null),
+          row("paused-first", 1, "2026-10-01T00:00:00Z"),
+          row("active-first", 2, null),
+        ],
+        error: null,
+      },
+    });
+
+    const result = await getProjectsByStatus("in_progress", client);
+
+    expect(result.data?.active.map((project) => project.id)).toEqual([
+      "active-first",
+      "active-second",
+      "unranked",
+    ]);
+    expect(result.data?.paused.map((project) => project.id)).toEqual([
+      "paused-first",
+      "paused-second",
+    ]);
+  });
+
+  it("keeps the query's newest-first order outside In progress", async () => {
+    const client = createMockProjectsClient({
+      queryResult: {
+        data: [
+          { ...sampleRow, id: "newer", status: "completed", plan_order: 7 },
+          { ...sampleRow, id: "older", status: "completed", plan_order: 1 },
+        ],
+        error: null,
+      },
+    });
+
+    const result = await getProjectsByStatus("completed", client);
+
+    expect(result.data?.active.map((project) => project.id)).toEqual([
+      "newer",
+      "older",
     ]);
   });
 

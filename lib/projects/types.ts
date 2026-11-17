@@ -97,6 +97,12 @@ export type ProjectsUpdateBuilder = {
     column: string,
     values: readonly (string | number)[],
   ) => ProjectsUpdateBuilder;
+  is: (column: string, value: null) => ProjectsUpdateBuilder;
+  not: (
+    column: string,
+    operator: string,
+    value: string | number | boolean | null,
+  ) => ProjectsUpdateBuilder;
   select: (columns?: string) => {
     single: () => Promise<{
       data: { id: string } | null;

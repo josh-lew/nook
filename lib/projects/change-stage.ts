@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
-import { nextRank } from "./next-rank";
+import { loadOwnProject } from "./load-own-project";
+import { rankAtBottom } from "./rank-at-bottom";
 import type {
   DataResult,
   ProjectStatus,
@@ -31,36 +32,17 @@ export async function changeStage(
   to: Stage,
   client: ProjectsSupabaseClient = supabase as unknown as ProjectsSupabaseClient,
 ): Promise<DataResult<null>> {
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
+  const { data: project, error: projectError } = await loadOwnProject(
+    projectId,
+    "move",
+    client,
+  );
 
-  if (userError) {
-    return { data: null, error: userError.message };
+  if (!project) {
+    return { data: null, error: projectError };
   }
 
-  if (!user) {
-    return { data: null, error: "You must be signed in to move a project." };
-  }
-
-  const { data: project, error: projectError } = await client
-    .from("projects")
-    .select("status")
-    .eq("id", projectId)
-    .eq("user_id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (projectError) {
-    return { data: null, error: projectError.message };
-  }
-
-  const from = (project as { status: ProjectStatus } | null)?.status;
-
-  if (!from) {
-    return { data: null, error: "Project not found." };
-  }
+  const from = project.status;
 
   if (!ALLOWED_MOVES[from].includes(to)) {
     return {
@@ -73,18 +55,19 @@ export async function changeStage(
 
   // Completed is ordered by completion date, so only the other Stages are ranked
   if (to !== "completed") {
-    const { data: rankRows, error: rankError } = await client
-      .from("projects")
-      .select("plan_order")
-      .eq("user_id", user.id)
-      .eq("status", to)
-      .is("deleted_at", null);
+    // Every move lands Active, so it joins the Active ranking
+    const { data: rank, error: rankError } = await rankAtBottom(
+      project.userId,
+      to,
+      false,
+      client,
+    );
 
-    if (rankError) {
-      return { data: null, error: rankError.message };
+    if (rank === null) {
+      return { data: null, error: rankError };
     }
 
-    planOrder = nextRank(rankRows);
+    planOrder = rank;
   }
 
   const { data: moved, error } = await client
@@ -92,10 +75,12 @@ export async function changeStage(
     .update({
       status: to,
       plan_order: planOrder,
+      // Every move lands Active: completing a Paused Project clears Paused
+      paused_at: null,
       // completed_at is set and cleared by a trigger (12_completed_at.sql) on the database clock
     })
     .eq("id", projectId)
-    .eq("user_id", user.id)
+    .eq("user_id", project.userId)
     // Guards against the Project being moved in between the read and the write
     .eq("status", from)
     .select("id")

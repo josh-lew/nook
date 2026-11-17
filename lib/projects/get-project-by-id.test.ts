@@ -18,6 +18,7 @@ const sampleRow: ProjectDetailRow = {
   promoted_at: null,
   seed_description: null,
   completed_at: null,
+  paused_at: null,
   project_photos: [
     {
       id: "ph1",
@@ -317,6 +318,14 @@ describe("mapProjectDetailRow", () => {
         completed_at: "2026-10-27T09:30:00Z",
       }).completedAt,
     ).toBe("2026-10-27T09:30:00Z");
+  });
+
+  it("is Paused once paused_at is set", () => {
+    expect(mapProjectDetailRow(sampleRow).paused).toBe(false);
+    expect(
+      mapProjectDetailRow({ ...sampleRow, paused_at: "2026-10-27T09:30:00Z" })
+        .paused,
+    ).toBe(true);
   });
 
   it("falls back to latest photo when none is primary", () => {

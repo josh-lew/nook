@@ -1,14 +1,9 @@
 import { changeStage } from "./change-stage";
-import { createMockProjectsClient } from "./test-utils";
+import { createMockProjectsClient, findUpdateCall } from "./test-utils";
 
 jest.mock("../supabase", () => ({
   supabase: {},
 }));
-
-function updateCall(client: ReturnType<typeof createMockProjectsClient>) {
-  const update = client.calls.find((call) => call.kind === "update");
-  return update?.kind === "update" ? update : undefined;
-}
 
 describe("changeStage", () => {
   it("starts a Planning Project at the bottom of the In progress ranking", async () => {
@@ -22,10 +17,18 @@ describe("changeStage", () => {
     const result = await changeStage("project-1", "in_progress", client);
 
     expect(result).toEqual({ data: null, error: null });
-    expect(updateCall(client)).toEqual({
+    // Paused Projects have their own ranking, so only Active ones count
+    expect(client.calls[1]).toMatchObject({
+      kind: "select",
+      filters: expect.arrayContaining([
+        { method: "eq", column: "status", value: "in_progress" },
+        { method: "is", column: "paused_at", value: null },
+      ]),
+    });
+    expect(findUpdateCall(client)).toEqual({
       table: "projects",
       kind: "update",
-      values: { status: "in_progress", plan_order: 8 },
+      values: { status: "in_progress", plan_order: 8, paused_at: null },
       filters: [
         { method: "eq", column: "id", value: "project-1" },
         { method: "eq", column: "user_id", value: "user-1" },
@@ -45,11 +48,12 @@ describe("changeStage", () => {
     const result = await changeStage("project-1", "in_progress", client);
 
     expect(result).toEqual({ data: null, error: null });
-    expect(updateCall(client)?.values).toEqual({
+    expect(findUpdateCall(client)?.values).toEqual({
       status: "in_progress",
       plan_order: 0,
+      paused_at: null,
     });
-    expect(updateCall(client)?.filters).toContainEqual({
+    expect(findUpdateCall(client)?.filters).toContainEqual({
       method: "eq",
       column: "status",
       value: "completed",
@@ -75,7 +79,7 @@ describe("changeStage", () => {
 
     expect(result.data).toBeNull();
     expect(result.error).toMatch(/can't move/i);
-    expect(updateCall(client)).toBeUndefined();
+    expect(findUpdateCall(client)).toBeUndefined();
   });
 
   it("rejects a move to Idea", async () => {
@@ -87,7 +91,7 @@ describe("changeStage", () => {
     const result = await changeStage("project-1", "idea" as "planning", client);
 
     expect(result.error).toMatch(/can't move/i);
-    expect(updateCall(client)).toBeUndefined();
+    expect(findUpdateCall(client)).toBeUndefined();
   });
 
   it("rejects a Project that doesn't exist or isn't the user's", async () => {
@@ -98,7 +102,7 @@ describe("changeStage", () => {
     const result = await changeStage("missing", "in_progress", client);
 
     expect(result).toEqual({ data: null, error: "Project not found." });
-    expect(updateCall(client)).toBeUndefined();
+    expect(findUpdateCall(client)).toBeUndefined();
   });
 
   it("reports a Project moved elsewhere between the read and the write", async () => {
@@ -147,7 +151,7 @@ describe("changeStage", () => {
     const result = await changeStage("project-1", "in_progress", client);
 
     expect(result).toEqual({ data: null, error: "rank failed" });
-    expect(updateCall(client)).toBeUndefined();
+    expect(findUpdateCall(client)).toBeUndefined();
   });
 
   it("returns a Supabase error message on update failure", async () => {
@@ -173,17 +177,34 @@ describe("changeStage", () => {
       const result = await changeStage("project-1", "completed", client);
 
       expect(result).toEqual({ data: null, error: null });
-      expect(updateCall(client)).toEqual({
+      expect(findUpdateCall(client)).toEqual({
         table: "projects",
         kind: "update",
         // Completed is ordered by completion date, not a manual rank; the date
         // comes from the database clock, so it is never sent from the device
-        values: { status: "completed", plan_order: null },
+        values: { status: "completed", plan_order: null, paused_at: null },
         filters: [
           { method: "eq", column: "id", value: "project-1" },
           { method: "eq", column: "user_id", value: "user-1" },
           { method: "eq", column: "status", value: "in_progress" },
         ],
+      });
+    });
+
+    it("clears Paused when a Paused Project is completed", async () => {
+      const client = createMockProjectsClient({
+        queryResult: {
+          data: { status: "in_progress", paused_at: "2026-10-01T00:00:00Z" },
+          error: null,
+        },
+      });
+
+      const result = await changeStage("project-1", "completed", client);
+
+      expect(result).toEqual({ data: null, error: null });
+      expect(findUpdateCall(client)?.values).toMatchObject({
+        status: "completed",
+        paused_at: null,
       });
     });
   });

@@ -6,12 +6,12 @@
 
 **Status:** ready-for-agent
 
-- [ ] Schema script: `paused_at` column
-- [ ] `pauseProject(id, note?)` only works on In progress Projects; writes the note as an In progress Note when given; places the Project at the bottom of the Paused ranking
-- [ ] `resumeProject(id)` clears Paused and places it at the bottom of the active ranking
-- [ ] Moving a Paused Project to Completed clears Paused
-- [ ] Stage list query returns active and Paused groups for In progress; the page renders both sections
-- [ ] Pause/Resume actions on the Project screen, with a skippable note sheet on Pause
-- [ ] Data-layer tests cover validity, note writing, ranking placement and grouping
+- [x] Schema script: `paused_at` column
+- [x] `pauseProject(id, note?)` only works on In progress Projects; writes the note as an In progress Note when given; places the Project at the bottom of the Paused ranking
+- [x] `resumeProject(id)` clears Paused and places it at the bottom of the active ranking
+- [x] Moving a Paused Project to Completed clears Paused
+- [x] Stage list query returns active and Paused groups for In progress; the page renders both sections
+- [x] Pause/Resume actions on the Project screen, with a skippable note sheet on Pause
+- [x] Data-layer tests cover validity, note writing, ranking placement and grouping
 
 **Note from 09:** `changeStage` ranks a Project entering In progress (Start or Reopen) against every In progress row. Once Paused exists, rank it against active (not Paused) In progress Projects only.

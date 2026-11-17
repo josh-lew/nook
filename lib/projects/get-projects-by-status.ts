@@ -19,6 +19,12 @@ export type ProjectListItem = {
   createdAt: string;
 };
 
+/** A Stage's list. Only In progress has Paused Projects; they sit below the Active ones. */
+export type StageList = {
+  active: ProjectListItem[];
+  paused: ProjectListItem[];
+};
+
 type NestedPhoto = {
   id: string;
   image_url: string;
@@ -49,6 +55,7 @@ export type ProjectListRow = {
   status: Stage;
   created_at: string;
   plan_order: number | null;
+  paused_at: string | null;
   pattern_files: NestedPatternFile[] | null;
   project_photos: NestedPhoto[] | null;
   project_materials: NestedMaterial[] | null;
@@ -120,10 +127,18 @@ export function mapProjectListRow(row: ProjectListRow): ProjectListItem {
   };
 }
 
+/** Rank ascending; unranked Projects sink to the bottom, keeping the query's newest-first order. */
+function compareRank(a: ProjectListRow, b: ProjectListRow): number {
+  if (a.plan_order === b.plan_order) return 0;
+  if (a.plan_order === null) return 1;
+  if (b.plan_order === null) return -1;
+  return a.plan_order - b.plan_order;
+}
+
 export async function getProjectsByStatus(
   stage: Stage,
   client: ProjectsSupabaseClient = supabase as unknown as ProjectsSupabaseClient,
-): Promise<DataResult<ProjectListItem[]>> {
+): Promise<DataResult<StageList>> {
   const {
     data: { user },
     error: userError,
@@ -147,6 +162,7 @@ export async function getProjectsByStatus(
       status,
       created_at,
       plan_order,
+      paused_at,
       project_photos ( id, image_url, created_at, is_primary ),
       project_materials ( id, name, is_selected, created_at ),
       pattern_options ( id, is_selected ),
@@ -163,8 +179,17 @@ export async function getProjectsByStatus(
   }
 
   const rows = (data ?? []) as ProjectListRow[];
+  // Only In progress is ranked here; other Stages keep the query's order
+  const ordered = stage === "in_progress" ? [...rows].sort(compareRank) : rows;
   return {
-    data: rows.map(mapProjectListRow),
+    data: {
+      active: ordered
+        .filter((row) => row.paused_at === null)
+        .map(mapProjectListRow),
+      paused: ordered
+        .filter((row) => row.paused_at !== null)
+        .map(mapProjectListRow),
+    },
     error: null,
   };
 }

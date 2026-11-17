@@ -27,6 +27,7 @@ import {
   ProjectPattern,
 } from "@/components/project/project-pattern";
 import { ProjectPhotos } from "@/components/project/project-photos";
+import { PauseSheet } from "@/components/project/pause-sheet";
 import { ProjectSeed } from "@/components/project/project-seed";
 import {
   StagePrompt,
@@ -36,6 +37,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { STAGE_LABELS } from "@/constants/stages";
 import { Spacing } from "@/constants/theme";
+import { usePauseProject } from "@/hooks/use-pause-project";
 import { useTheme } from "@/hooks/use-theme";
 import {
   changeStage,
@@ -89,8 +91,6 @@ export default function ProjectDetailScreen() {
   const [moving, setMoving] = useState(false);
   const [stagePrompt, setStagePrompt] = useState<StagePromptKind | null>(null);
 
-  const busy = saving || sectionBusy || deleting || moving;
-
   /** Reloads the Project. With `resetFields`, the form takes the saved values too. */
   const load = useCallback(
     async (resetFields: boolean) => {
@@ -129,6 +129,19 @@ export default function ProjectDetailScreen() {
   );
 
   const reload = useCallback(() => load(false), [load]);
+  const pauseActions = usePauseProject({
+    project,
+    reload,
+    onResumeError: setActionError,
+  });
+
+  const busy =
+    saving ||
+    sectionBusy ||
+    deleting ||
+    moving ||
+    pauseActions.pausing ||
+    pauseActions.resuming;
 
   useEffect(() => {
     navigation.setOptions({ title: project?.title ?? "Project" });
@@ -325,9 +338,45 @@ export default function ProjectDetailScreen() {
         </View>
 
         <View style={styles.stageRow}>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText
+            type="small"
+            themeColor="textSecondary"
+            style={styles.stageLabel}
+          >
             {STAGE_LABELS[stage]}
+            {project.paused ? " · Paused" : ""}
           </ThemedText>
+          {stage === "in_progress" ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                project.paused ? "Resume project" : "Pause project"
+              }
+              disabled={busy}
+              onPress={() => {
+                if (project.paused) {
+                  void pauseActions.resume();
+                } else {
+                  pauseActions.openSheet();
+                }
+              }}
+              style={({ pressed }) => [
+                styles.stageBtn,
+                styles.pauseBtn,
+                { borderColor: theme.border },
+                pressed && styles.pressed,
+                busy && styles.disabled,
+              ]}
+            >
+              {pauseActions.resuming ? (
+                <ActivityIndicator color={theme.textPrimary} />
+              ) : (
+                <ThemedText type="smallBold">
+                  {project.paused ? "Resume" : "Pause"}
+                </ThemedText>
+              )}
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${stageAction.label} project`}
@@ -478,6 +527,14 @@ export default function ProjectDetailScreen() {
         onClose={() => setStagePrompt(null)}
         onChanged={reload}
       />
+
+      <PauseSheet
+        visible={pauseActions.sheetVisible}
+        pausing={pauseActions.pausing}
+        error={pauseActions.pauseError}
+        onCancel={pauseActions.closeSheet}
+        onPause={pauseActions.pause}
+      />
     </ThemedView>
   );
 }
@@ -522,6 +579,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  stageLabel: {
+    flex: 1,
+  },
   stageBtn: {
     minWidth: 88,
     alignItems: "center",
@@ -529,6 +589,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.two,
+  },
+  pauseBtn: {
+    marginRight: Spacing.two,
+    borderWidth: 1,
   },
   field: {
     gap: Spacing.one,

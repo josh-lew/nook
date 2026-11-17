@@ -269,7 +269,7 @@ export function OpenPatternButton({ pattern }: { pattern: Pattern }) {
         animationType="fade"
         onRequestClose={() => setPickerOpen(false)}
       >
-        <View style={styles.backdrop}>
+        <View style={[styles.backdrop, { backgroundColor: theme.scrim }]}>
           {/* A sibling, not a parent, so taps inside the sheet don't close it */}
           <Pressable
             accessibilityLabel="Close"
@@ -341,7 +341,6 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
   },
   sheet: {
     gap: Spacing.two,

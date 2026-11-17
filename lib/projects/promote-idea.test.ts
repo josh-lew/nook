@@ -1,14 +1,9 @@
 import { promoteIdea } from "./promote-idea";
-import { createMockProjectsClient } from "./test-utils";
+import { createMockProjectsClient, findUpdateCall } from "./test-utils";
 
 jest.mock("../supabase", () => ({
   supabase: {},
 }));
-
-function updateCall(client: ReturnType<typeof createMockProjectsClient>) {
-  const update = client.calls.find((call) => call.kind === "update");
-  return update?.kind === "update" ? update : undefined;
-}
 
 describe("promoteIdea", () => {
   it("turns an Idea into a Planning Project at the bottom of the Planning ranking", async () => {
@@ -25,7 +20,7 @@ describe("promoteIdea", () => {
     const result = await promoteIdea("idea-1", client);
 
     expect(result).toEqual({ data: null, error: null });
-    expect(updateCall(client)).toEqual({
+    expect(findUpdateCall(client)).toEqual({
       table: "projects",
       kind: "update",
       values: {
@@ -51,7 +46,7 @@ describe("promoteIdea", () => {
 
     await promoteIdea("idea-1", client);
 
-    expect(updateCall(client)?.values).toMatchObject({
+    expect(findUpdateCall(client)?.values).toMatchObject({
       plan_order: 0,
       seed_description: null,
     });
@@ -68,7 +63,7 @@ describe("promoteIdea", () => {
 
       expect(result.data).toBeNull();
       expect(result.error).toMatch(/only an idea/i);
-      expect(updateCall(client)).toBeUndefined();
+      expect(findUpdateCall(client)).toBeUndefined();
     },
   );
 
@@ -80,7 +75,7 @@ describe("promoteIdea", () => {
     const result = await promoteIdea("missing", client);
 
     expect(result).toEqual({ data: null, error: "Idea not found." });
-    expect(updateCall(client)).toBeUndefined();
+    expect(findUpdateCall(client)).toBeUndefined();
   });
 
   it("reports an Idea promoted elsewhere between the read and the write", async () => {
