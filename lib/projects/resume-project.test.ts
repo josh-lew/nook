@@ -1,19 +1,14 @@
 import { resumeProject } from "./resume-project";
-import { createMockProjectsClient } from "./test-utils";
+import { createMockProjectsClient, findUpdateCall } from "./test-utils";
 
 jest.mock("../supabase", () => ({
   supabase: {},
 }));
 
-function updateCall(client: ReturnType<typeof createMockProjectsClient>) {
-  const update = client.calls.find((call) => call.kind === "update");
-  return update?.kind === "update" ? update : undefined;
-}
-
 const PAUSED = { status: "in_progress", paused_at: "2026-10-01T00:00:00Z" };
 
 describe("resumeProject", () => {
-  it("clears Paused and places the Project at the bottom of the active ranking", async () => {
+  it("clears Paused and places the Project at the bottom of the Active ranking", async () => {
     const client = createMockProjectsClient({
       queryResults: [
         { data: PAUSED, error: null },
@@ -24,7 +19,7 @@ describe("resumeProject", () => {
     const result = await resumeProject("project-1", client);
 
     expect(result).toEqual({ data: null, error: null });
-    // Only active Projects are ranked against
+    // Only Active Projects are ranked against
     expect(client.calls[1]).toMatchObject({
       kind: "select",
       filters: expect.arrayContaining([
@@ -32,7 +27,7 @@ describe("resumeProject", () => {
         { method: "is", column: "paused_at", value: null },
       ]),
     });
-    expect(updateCall(client)).toEqual({
+    expect(findUpdateCall(client)).toEqual({
       table: "projects",
       kind: "update",
       values: { paused_at: null, plan_order: 4 },
@@ -46,7 +41,7 @@ describe("resumeProject", () => {
   });
 
   it.each([
-    ["an active In progress Project", { status: "in_progress", paused_at: null }],
+    ["an Active Project", { status: "in_progress", paused_at: null }],
     ["a Planning Project", { status: "planning", paused_at: null }],
     ["a Completed Project", { status: "completed", paused_at: null }],
     ["an Idea", { status: "idea", paused_at: null }],
@@ -59,7 +54,7 @@ describe("resumeProject", () => {
 
     expect(result.data).toBeNull();
     expect(result.error).toMatch(/only a paused/i);
-    expect(updateCall(client)).toBeUndefined();
+    expect(findUpdateCall(client)).toBeUndefined();
   });
 
   it("rejects a Project that doesn't exist or isn't the user's", async () => {
@@ -97,7 +92,7 @@ describe("resumeProject", () => {
     const result = await resumeProject("project-1", client);
 
     expect(result).toEqual({ data: null, error: "rank failed" });
-    expect(updateCall(client)).toBeUndefined();
+    expect(findUpdateCall(client)).toBeUndefined();
   });
 
   it("returns an error when the user is not signed in", async () => {

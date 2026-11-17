@@ -58,7 +58,7 @@ export function AddProjectModal({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Dismiss"
-          style={styles.backdrop}
+          style={[styles.backdrop, { backgroundColor: theme.scrim }]}
           onPress={onClose}
         />
 
@@ -187,7 +187,6 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
   },
   sheet: {
     height: "50%",

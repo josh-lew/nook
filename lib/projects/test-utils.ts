@@ -239,3 +239,9 @@ export function createMockProjectsClient(options: {
     }),
   } as MockProjectsClient;
 }
+
+/** The first update a test client saw, if any. */
+export function findUpdateCall(client: MockProjectsClient) {
+  const update = client.calls.find((call) => call.kind === "update");
+  return update?.kind === "update" ? update : undefined;
+}

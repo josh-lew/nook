@@ -216,7 +216,7 @@ describe("getProjectsByStatus", () => {
     ]);
   });
 
-  it("groups In progress into active and Paused, each in rank order", async () => {
+  it("groups In progress into Active and Paused, each in rank order", async () => {
     const row = (id: string, planOrder: number | null, pausedAt: string | null) => ({
       ...sampleRow,
       id,

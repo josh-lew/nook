@@ -19,7 +19,7 @@ export type ProjectListItem = {
   createdAt: string;
 };
 
-/** A Stage's list. Only In progress has Paused Projects; they sit below the active ones. */
+/** A Stage's list. Only In progress has Paused Projects; they sit below the Active ones. */
 export type StageList = {
   active: ProjectListItem[];
   paused: ProjectListItem[];

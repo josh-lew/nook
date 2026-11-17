@@ -37,14 +37,12 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { STAGE_LABELS } from "@/constants/stages";
 import { Spacing } from "@/constants/theme";
+import { usePauseProject } from "@/hooks/use-pause-project";
 import { useTheme } from "@/hooks/use-theme";
 import {
   changeStage,
   deleteProject,
   getProjectById,
-  insertProjectNote,
-  pauseProject,
-  resumeProject,
   updateProject,
   type HobbyType,
   type ProjectDetail,
@@ -92,11 +90,6 @@ export default function ProjectDetailScreen() {
   const [deleting, setDeleting] = useState(false);
   const [moving, setMoving] = useState(false);
   const [stagePrompt, setStagePrompt] = useState<StagePromptKind | null>(null);
-  const [pauseSheetVisible, setPauseSheetVisible] = useState(false);
-  const [pausing, setPausing] = useState(false);
-  const [pauseError, setPauseError] = useState<string | null>(null);
-
-  const busy = saving || sectionBusy || deleting || moving || pausing;
 
   /** Reloads the Project. With `resetFields`, the form takes the saved values too. */
   const load = useCallback(
@@ -136,6 +129,19 @@ export default function ProjectDetailScreen() {
   );
 
   const reload = useCallback(() => load(false), [load]);
+  const pauseActions = usePauseProject({
+    project,
+    reload,
+    onResumeError: setActionError,
+  });
+
+  const busy =
+    saving ||
+    sectionBusy ||
+    deleting ||
+    moving ||
+    pauseActions.pausing ||
+    pauseActions.resuming;
 
   useEffect(() => {
     navigation.setOptions({ title: project?.title ?? "Project" });
@@ -189,45 +195,6 @@ export default function ProjectDetailScreen() {
       setStagePrompt(action.prompt);
     }
     setMoving(false);
-  };
-
-  /** Resolves true once paused and noted, so the sheet can keep the note on failure. */
-  const handlePause = async (note: string) => {
-    if (!project) {
-      return false;
-    }
-
-    setPauseError(null);
-    setPausing(true);
-    // A failed note leaves the Project Paused, so a retry saves just the note
-    const result = project.paused
-      ? await insertProjectNote(project.id, note, "in_progress")
-      : await pauseProject(project.id, note);
-    // Reload either way: a failed note still leaves the Project Paused
-    await reload();
-    setPausing(false);
-    if (result.error) {
-      setPauseError(result.error);
-      return false;
-    }
-    setPauseSheetVisible(false);
-    return true;
-  };
-
-  const handleResume = async () => {
-    if (!project) {
-      return;
-    }
-
-    setActionError(null);
-    setPausing(true);
-    const result = await resumeProject(project.id);
-    if (result.error) {
-      setActionError(result.error);
-    }
-    // Reload either way: an error may mean it changed elsewhere
-    await reload();
-    setPausing(false);
   };
 
   const handleDelete = async () => {
@@ -388,9 +355,9 @@ export default function ProjectDetailScreen() {
               disabled={busy}
               onPress={() => {
                 if (project.paused) {
-                  void handleResume();
+                  void pauseActions.resume();
                 } else {
-                  setPauseSheetVisible(true);
+                  pauseActions.openSheet();
                 }
               }}
               style={({ pressed }) => [
@@ -401,7 +368,7 @@ export default function ProjectDetailScreen() {
                 busy && styles.disabled,
               ]}
             >
-              {pausing && project.paused ? (
+              {pauseActions.resuming ? (
                 <ActivityIndicator color={theme.textPrimary} />
               ) : (
                 <ThemedText type="smallBold">
@@ -562,14 +529,11 @@ export default function ProjectDetailScreen() {
       />
 
       <PauseSheet
-        visible={pauseSheetVisible}
-        pausing={pausing}
-        error={pauseError}
-        onCancel={() => {
-          setPauseError(null);
-          setPauseSheetVisible(false);
-        }}
-        onPause={handlePause}
+        visible={pauseActions.sheetVisible}
+        pausing={pauseActions.pausing}
+        error={pauseActions.pauseError}
+        onCancel={pauseActions.closeSheet}
+        onPause={pauseActions.pause}
       />
     </ThemedView>
   );

@@ -1,14 +1,11 @@
 import { supabase } from "../supabase";
 import { insertProjectNote } from "./insert-project-note";
-import { nextRank } from "./next-rank";
-import type {
-  DataResult,
-  ProjectStatus,
-  ProjectsSupabaseClient,
-} from "./types";
+import { loadOwnProject } from "./load-own-project";
+import { rankAtBottom } from "./rank-at-bottom";
+import type { DataResult, ProjectsSupabaseClient } from "./types";
 
 /**
- * Puts an In progress Project down for now. It stays In progress, joins the
+ * Puts an Active Project down for now. It stays In progress, joins the
  * bottom of the Paused ranking, and an optional note on where the maker got
  * to is saved as an In progress Note.
  */
@@ -17,57 +14,32 @@ export async function pauseProject(
   note?: string,
   client: ProjectsSupabaseClient = supabase as unknown as ProjectsSupabaseClient,
 ): Promise<DataResult<null>> {
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
+  const { data: project, error: projectError } = await loadOwnProject(
+    projectId,
+    "pause",
+    client,
+  );
 
-  if (userError) {
-    return { data: null, error: userError.message };
+  if (!project) {
+    return { data: null, error: projectError };
   }
 
-  if (!user) {
-    return { data: null, error: "You must be signed in to pause a project." };
-  }
-
-  const { data: project, error: projectError } = await client
-    .from("projects")
-    .select("status, paused_at")
-    .eq("id", projectId)
-    .eq("user_id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (projectError) {
-    return { data: null, error: projectError.message };
-  }
-
-  const row = project as {
-    status: ProjectStatus;
-    paused_at: string | null;
-  } | null;
-
-  if (!row) {
-    return { data: null, error: "Project not found." };
-  }
-
-  if (row.status !== "in_progress" || row.paused_at !== null) {
+  if (project.status !== "in_progress" || project.pausedAt !== null) {
     return {
       data: null,
       error: "Only an active In progress Project can be paused.",
     };
   }
 
-  const { data: rankRows, error: rankError } = await client
-    .from("projects")
-    .select("plan_order")
-    .eq("user_id", user.id)
-    .eq("status", "in_progress")
-    .not("paused_at", "is", null)
-    .is("deleted_at", null);
+  const { data: rank, error: rankError } = await rankAtBottom(
+    project.userId,
+    "in_progress",
+    true,
+    client,
+  );
 
-  if (rankError) {
-    return { data: null, error: rankError.message };
+  if (rank === null) {
+    return { data: null, error: rankError };
   }
 
   const { data: paused, error } = await client
@@ -75,10 +47,10 @@ export async function pauseProject(
     .update({
       // Any non-null value pauses; a trigger (13_paused_at.sql) replaces it with the database clock
       paused_at: new Date().toISOString(),
-      plan_order: nextRank(rankRows),
+      plan_order: rank,
     })
     .eq("id", projectId)
-    .eq("user_id", user.id)
+    .eq("user_id", project.userId)
     // Guards against the Project being moved or paused in between the read and the write
     .eq("status", "in_progress")
     .is("paused_at", null)

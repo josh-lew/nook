@@ -179,6 +179,8 @@ export function StatusPage({
     onProjectsChanged?.();
   };
 
+  const loaded = !loading && !error;
+
   return (
     <ThemedView style={[styles.page, { width }]}>
       <ScrollView
@@ -245,8 +247,7 @@ export function StatusPage({
           </View>
         ) : null}
 
-        {!loading &&
-        !error &&
+        {loaded &&
         projects.active.length === 0 &&
         projects.paused.length === 0 ? (
           <View style={styles.state}>
@@ -256,7 +257,7 @@ export function StatusPage({
           </View>
         ) : null}
 
-        {!loading && !error && projects.active.length > 0 ? (
+        {loaded && projects.active.length > 0 ? (
           <View style={styles.list}>
             {projects.active.map((project) => (
               <ProjectCard
@@ -268,7 +269,7 @@ export function StatusPage({
           </View>
         ) : null}
 
-        {!loading && !error && projects.paused.length > 0 ? (
+        {loaded && projects.paused.length > 0 ? (
           <View style={styles.list}>
             <ThemedText type="smallBold" themeColor="textSecondary">
               Paused

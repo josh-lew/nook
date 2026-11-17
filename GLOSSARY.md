@@ -22,6 +22,12 @@ An In progress Project the maker has put down for now. Paused is not a Stage: a 
 
 _Avoid_: hibernating, abandoned, on hold.
 
+## Active
+
+An In progress Project that is not Paused: one the maker is currently making. Active and Paused Projects are ranked as separate lists.
+
+_Avoid_: unpaused, current.
+
 ## Promote
 
 To turn an Idea into a Project, entering the Planning Stage. Nothing new is asked for: the Idea's hobby carries over. The Idea ceases to exist as an Idea; its content becomes the Project's Seed.

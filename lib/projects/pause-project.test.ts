@@ -1,14 +1,9 @@
 import { pauseProject } from "./pause-project";
-import { createMockProjectsClient } from "./test-utils";
+import { createMockProjectsClient, findUpdateCall } from "./test-utils";
 
 jest.mock("../supabase", () => ({
   supabase: {},
 }));
-
-function updateCall(client: ReturnType<typeof createMockProjectsClient>) {
-  const update = client.calls.find((call) => call.kind === "update");
-  return update?.kind === "update" ? update : undefined;
-}
 
 describe("pauseProject", () => {
   it("pauses an In progress Project at the bottom of the Paused ranking", async () => {
@@ -30,7 +25,7 @@ describe("pauseProject", () => {
         { method: "not", column: "paused_at", operator: "is", value: null },
       ]),
     });
-    expect(updateCall(client)).toEqual({
+    expect(findUpdateCall(client)).toEqual({
       table: "projects",
       kind: "update",
       values: { paused_at: expect.any(String), plan_order: 5 },
@@ -59,7 +54,7 @@ describe("pauseProject", () => {
     );
 
     expect(result).toEqual({ data: null, error: null });
-    expect(updateCall(client)?.values).toMatchObject({ plan_order: 0 });
+    expect(findUpdateCall(client)?.values).toMatchObject({ plan_order: 0 });
     expect(client.calls.at(-1)).toEqual({
       table: "project_notes",
       kind: "insert",
@@ -102,7 +97,7 @@ describe("pauseProject", () => {
 
     expect(result.data).toBeNull();
     expect(result.error).toMatch(/only an active in progress/i);
-    expect(updateCall(client)).toBeUndefined();
+    expect(findUpdateCall(client)).toBeUndefined();
     expect(client.calls.some((call) => call.kind === "insert")).toBe(false);
   });
 
@@ -144,7 +139,7 @@ describe("pauseProject", () => {
 
     const result = await pauseProject("project-1", "Row 40", client);
 
-    expect(updateCall(client)).toBeDefined();
+    expect(findUpdateCall(client)).toBeDefined();
     expect(result).toEqual({
       data: null,
       error: "Paused, but the note wasn't saved: insert failed",

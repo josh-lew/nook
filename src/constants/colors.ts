@@ -14,6 +14,8 @@ export type ThemeColors = {
   textSecondary: string;
   border: string;
   error: string;
+  /** Dims the screen behind a sheet or modal */
+  scrim: string;
 };
 
 // Cosy, earthy palette: oat and linen neutrals, sage accent, terracotta secondary
@@ -27,6 +29,7 @@ export const lightColors: ThemeColors = {
   textSecondary: "#5A4535", // walnut
   border: "#CDB089",
   error: "#9B2F2F",
+  scrim: "rgba(0, 0, 0, 0.4)",
 };
 
 export const darkColors: ThemeColors = {
@@ -39,6 +42,7 @@ export const darkColors: ThemeColors = {
   textSecondary: "#C4B19C",
   border: "#5A4838",
   error: "#E8857A",
+  scrim: "rgba(0, 0, 0, 0.4)",
 };
 
 /** @deprecated Prefer lightColors / darkColors — kept for keyed lookup */
