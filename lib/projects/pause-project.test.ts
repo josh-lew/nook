@@ -132,6 +132,25 @@ describe("pauseProject", () => {
     expect(client.calls.some((call) => call.kind === "insert")).toBe(false);
   });
 
+  it("reports a note that failed to save once the Project is Paused", async () => {
+    const client = createMockProjectsClient({
+      queryResults: [
+        { data: { status: "in_progress", paused_at: null }, error: null },
+        { data: [], error: null },
+      ],
+      updateSelectResult: { data: { id: "project-1" }, error: null },
+      insertResult: { data: null, error: { message: "insert failed" } },
+    });
+
+    const result = await pauseProject("project-1", "Row 40", client);
+
+    expect(updateCall(client)).toBeDefined();
+    expect(result).toEqual({
+      data: null,
+      error: "Paused, but the note wasn't saved: insert failed",
+    });
+  });
+
   it("returns an error when the user is not signed in", async () => {
     const client = createMockProjectsClient({ user: null });
 

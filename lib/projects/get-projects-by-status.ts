@@ -178,13 +178,15 @@ export async function getProjectsByStatus(
     return { data: null, error: error.message };
   }
 
-  const rows = [...((data ?? []) as ProjectListRow[])].sort(compareRank);
+  const rows = (data ?? []) as ProjectListRow[];
+  // Only In progress is ranked here; other Stages keep the query's order
+  const ordered = stage === "in_progress" ? [...rows].sort(compareRank) : rows;
   return {
     data: {
-      active: rows
+      active: ordered
         .filter((row) => row.paused_at === null)
         .map(mapProjectListRow),
-      paused: rows
+      paused: ordered
         .filter((row) => row.paused_at !== null)
         .map(mapProjectListRow),
     },

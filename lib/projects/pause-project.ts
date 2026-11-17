@@ -106,7 +106,10 @@ export async function pauseProject(
     );
 
     if (noteError) {
-      return { data: null, error: noteError };
+      return {
+        data: null,
+        error: `Paused, but the note wasn't saved: ${noteError}`,
+      };
     }
   }
 

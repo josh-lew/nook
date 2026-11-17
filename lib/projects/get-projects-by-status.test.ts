@@ -250,6 +250,25 @@ describe("getProjectsByStatus", () => {
     ]);
   });
 
+  it("keeps the query's newest-first order outside In progress", async () => {
+    const client = createMockProjectsClient({
+      queryResult: {
+        data: [
+          { ...sampleRow, id: "newer", status: "completed", plan_order: 7 },
+          { ...sampleRow, id: "older", status: "completed", plan_order: 1 },
+        ],
+        error: null,
+      },
+    });
+
+    const result = await getProjectsByStatus("completed", client);
+
+    expect(result.data?.active.map((project) => project.id)).toEqual([
+      "newer",
+      "older",
+    ]);
+  });
+
   it("only asks for Projects in the Stage, so Ideas never appear", async () => {
     const client = createMockProjectsClient({});
 

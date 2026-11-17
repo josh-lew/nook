@@ -42,6 +42,7 @@ import {
   changeStage,
   deleteProject,
   getProjectById,
+  insertProjectNote,
   pauseProject,
   resumeProject,
   updateProject,
@@ -190,7 +191,7 @@ export default function ProjectDetailScreen() {
     setMoving(false);
   };
 
-  /** Resolves true once paused, so the sheet can keep the note on failure. */
+  /** Resolves true once paused and noted, so the sheet can keep the note on failure. */
   const handlePause = async (note: string) => {
     if (!project) {
       return false;
@@ -198,7 +199,10 @@ export default function ProjectDetailScreen() {
 
     setPauseError(null);
     setPausing(true);
-    const result = await pauseProject(project.id, note);
+    // A failed note leaves the Project Paused, so a retry saves just the note
+    const result = project.paused
+      ? await insertProjectNote(project.id, note, "in_progress")
+      : await pauseProject(project.id, note);
     // Reload either way: a failed note still leaves the Project Paused
     await reload();
     setPausing(false);

@@ -146,6 +146,8 @@ export function createMockProjectsClient(options: {
   user?: { id: string } | null;
   userError?: { message: string } | null;
   insertResult?: InsertResult;
+  /** Result of `update(...).select(...)`; defaults to `insertResult`. */
+  updateSelectResult?: InsertResult;
   updateResult?: UpdateResult;
   /** Return a different result for each successive update call. */
   updateResults?: UpdateResult[];
@@ -208,7 +210,7 @@ export function createMockProjectsClient(options: {
           call,
           values,
           result,
-          insertResult,
+          options.updateSelectResult ?? insertResult,
           options.onUpdate,
         );
       },
